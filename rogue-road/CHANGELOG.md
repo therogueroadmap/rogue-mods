@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-22
+
+### Removed
+- The click on the sun: it no longer shows the context breakdown. The badge, the explorer and the camp still answer clicks.
+
 ## [0.9.0] - 2026-11-22
 
 ### Added

@@ -721,14 +721,14 @@ export const register: Register = (on, options) => {
 
   // ─── Fondo interactivo ─────────────────────────────────────────────
   // Un clic en la insignia abre la bitácora; en el viajero, la fase y un
-  // consejo; en el sol, el desglose del contexto; en el campamento, acampa.
+  // consejo; en el campamento, acampa.
   on('ui.pointer', async ($, e, next) => {
     if (!/^fase-\d-/.test(e.scene)) {
       return next(e)
     }
     const { percent, phase } = await read($, trail)
     const p = percent ?? 0
-    const zone = zoneAt(e.x, e.y, p)
+    const zone = zoneAt(e.x, e.y)
     if (zone === 'insignia') {
       await $.ui.open({ id: PANE, title: t.pane.title })
     } else if (zone === 'viajero') {
@@ -736,11 +736,6 @@ export const register: Register = (on, options) => {
       const w = skyOf(await read($, weather))
       const mates = await read($, companions)
       $.ui.toast(t.toast.traveler(`${ph.icon} ${ph.name} · ${p} % · ${w.icon} ${w.name}${mates.length > 0 ? ` · ${t.toast.mates(mates.length)}` : ''}`, ph.tip))
-    } else if (zone === 'sol') {
-      const book = await read($, ledger)
-      const rows = (book?.rows ?? []).filter(r => r.kind === 'used').map(r => `${r.name} ${tokensOf(r.tokens)}`)
-      const fill = book?.tokens === null || book === null ? `${p} %` : `${tokensOf(book.tokens)}/${tokensOf(book.window)}`
-      $.ui.toast(t.toast.context(fill, rows.join(' · ')))
     } else if (zone === 'campamento') {
       if (p >= CAMP_FROM) {
         camp($)

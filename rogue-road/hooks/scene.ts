@@ -414,25 +414,20 @@ export type SceneInput = {
   words?: { walking: string; waiting: string }
 }
 
-/** Qué hay bajo un clic en el fondo: la insignia, el viajero, el sol o el campamento. */
-export type Zone = 'insignia' | 'viajero' | 'sol' | 'campamento' | null
+/** Qué hay bajo un clic en el fondo: la insignia, el viajero o el campamento. */
+export type Zone = 'insignia' | 'viajero' | 'campamento' | null
 
 /**
  * La zona de un clic, con `x` e `y` de 0 a 1 sobre el fondo. Aproxima la
  * escena en una ventana apaisada: la insignia y el viajero en la columna
- * izquierda, el campamento al final del camino a la derecha, y el sol donde
- * va según el contexto.
+ * izquierda y el campamento al final del camino a la derecha.
  */
-export const zoneAt = (x: number, y: number, percent: number): Zone => {
-  const sun = sunAt(percent)
+export const zoneAt = (x: number, y: number): Zone => {
   if (x < 0.22 && y < 0.24) {
     return 'insignia'
   }
   if (x < 0.24 && y > 0.66) {
     return 'viajero'
-  }
-  if (Math.abs(x - sun.x / W) < 0.08 && Math.abs(y - (sun.y / 520) * 0.64) < 0.1) {
-    return 'sol'
   }
   if (x > 0.84 && y > 0.42 && y < 0.78) {
     return 'campamento'

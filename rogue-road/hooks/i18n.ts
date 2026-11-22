@@ -36,7 +36,6 @@ export type Texts = {
     clearFail: string
     submitFail: (what: string) => string
     stillLight: (percent: number, from: number) => string
-    context: (fill: string, rows: string) => string
     traveler: (head: string, tip: string) => string
     mates: (n: number) => string
   }
@@ -142,7 +141,6 @@ const es: Texts = {
     clearFail: 'No se pudo limpiar el sendero. Usa /clear directamente.',
     submitFail: what => `No se pudo ${what}. Inténtalo de nuevo cuando Claude termine.`,
     stillLight: (p, from) => `⛺ Aún hay luz (${p} %). El campamento espera al atardecer, desde el ${from} %.`,
-    context: (fill, rows) => `☀ Contexto ${fill}${rows === '' ? '' : `: ${rows}`}`,
     traveler: (head, tip) => `${head}. ${tip}`,
     mates: n => `${n} compañeros`,
   },
@@ -276,7 +274,6 @@ const en: Texts = {
     clearFail: 'Could not clear the trail. Use /clear directly.',
     submitFail: what => `Could not ${what}. Try again when Claude is done.`,
     stillLight: (p, from) => `⛺ There is still light (${p} %). The camp waits for sunset, from ${from} %.`,
-    context: (fill, rows) => `☀ Context ${fill}${rows === '' ? '' : `: ${rows}`}`,
     traveler: (head, tip) => `${head}. ${tip}`,
     mates: n => `${n} companions`,
   },
@@ -410,7 +407,6 @@ const fr: Texts = {
     clearFail: 'Impossible d’effacer la piste. Utilisez /clear directement.',
     submitFail: what => `Impossible de ${what}. Réessayez quand Claude aura terminé.`,
     stillLight: (p, from) => `⛺ Il fait encore jour (${p} %). Le campement attend le crépuscule, à partir de ${from} %.`,
-    context: (fill, rows) => `☀ Contexte ${fill}${rows === '' ? '' : ` : ${rows}`}`,
     traveler: (head, tip) => `${head}. ${tip}`,
     mates: n => `${n} compagnons`,
   },

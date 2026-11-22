@@ -415,25 +415,20 @@ const DARK_EXTRA = '--staff: #A7B0C2; --boot: #8A5A3C; --mate: #6F7A90;'
                                               
  
 
-/** Qué hay bajo un clic en el fondo: la insignia, el viajero, el sol o el campamento. */
-                                                                       
+/** Qué hay bajo un clic en el fondo: la insignia, el viajero o el campamento. */
+                                                               
 
 /**
  * La zona de un clic, con `x` e `y` de 0 a 1 sobre el fondo. Aproxima la
  * escena en una ventana apaisada: la insignia y el viajero en la columna
- * izquierda, el campamento al final del camino a la derecha, y el sol donde
- * va según el contexto.
+ * izquierda y el campamento al final del camino a la derecha.
  */
-export const zoneAt = (x        , y        , percent        )       => {
-  const sun = sunAt(percent)
+export const zoneAt = (x        , y        )       => {
   if (x < 0.22 && y < 0.24) {
     return 'insignia'
   }
   if (x < 0.24 && y > 0.66) {
     return 'viajero'
-  }
-  if (Math.abs(x - sun.x / W) < 0.08 && Math.abs(y - (sun.y / 520) * 0.64) < 0.1) {
-    return 'sol'
   }
   if (x > 0.84 && y > 0.42 && y < 0.78) {
     return 'campamento'

@@ -32,13 +32,13 @@ What it adds:
 - **Travel companions.** Each subagent walks beside the explorer while it works (up to three, then `+N`) and leaves when it finishes. The row shows `⚇ N`.
 - **A logbook pane.** `/logbook`, the `Bitácora` button or a click on the badge opens a pane beside the conversation: today's milestones, phases, weather and companions grouped by phase, with the time and the context at each, plus a summary of earlier days.
 - **Ambient sound (desktop).** Birds at dawn, wind at midday, crickets at dusk and the campfire at night, with rain and thunder when the weather turns, and short cues when you send, when Claude finishes, asks or fails, and when you camp. The app synthesises it: there are no audio files. Turn it on with the speaker in the session's title bar; turn the mod's sound on or off with `/sound on|off`, the `♪` button in the row, or the `Sonido ambiental` setting.
-- **An interactive backdrop.** Click the badge to open the logbook, the explorer for the phase and a tip, the sun for the context breakdown, and the camp to camp from 75 % on.
+- **An interactive backdrop.** Click the badge to open the logbook, the explorer for the phase and a tip, and the camp to camp from 75 % on.
 
 - **Closing the day.** `/clear-trail` clears the context and starts from nothing. `/trail-log [focus]` asks Claude for an end-of-session summary. `/pass-the-map [purpose]` asks Claude for a handoff file a new session can pick up, with the [`handoff`](https://github.com/mattpocock/skills/blob/main/docs/productivity/handoff.md) skill when it is installed. Both attach the day's logbook.
 
 - **Three languages.** Spanish, English or French for the row, the logbook, the toasts, the badge and the requests to Claude; the commands stay in English.
 
-Version 0.9.0.
+Version 0.9.1.
 
 ### Install
 
@@ -99,7 +99,7 @@ Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y n
 - **Compañeros de viaje:** cada subagente camina junto al explorador mientras trabaja y se va al terminar.
 - **Bitácora:** `/logbook`, el botón `Bitácora` o un clic en la insignia abren un panel con los hitos, fases, clima y compañeros del día, agrupados por fase, y un resumen de los días anteriores.
 - **Sonido ambiental (escritorio):** pájaros al alba, viento al mediodía, grillos al atardecer y la fogata de noche, más lluvia y truenos según el clima, y señales breves al enviar, terminar, preguntar, fallar y acampar. Se activa con el parlante de la barra de título; el sonido del mod se habilita o deshabilita con `/sound on|off`, el botón `♪` de la banda o el ajuste `Sonido ambiental`.
-- **Fondo interactivo:** un clic en la insignia abre la bitácora, en el explorador muestra la fase y un consejo, en el sol el desglose del contexto y en el campamento acampa (desde el 75 %).
+- **Fondo interactivo:** un clic en la insignia abre la bitácora, en el explorador muestra la fase y un consejo y en el campamento acampa (desde el 75 %).
 
 Para cerrar el día: `/clear-trail` limpia el contexto y empieza de cero, `/trail-log [foco]` le pide a Claude el resumen de la sesión y `/pass-the-map [propósito]` le pide un handoff para continuar en una sesión nueva (con la skill `handoff` si está instalada). Los dos últimos adjuntan la bitácora del día.
 

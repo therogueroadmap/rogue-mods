@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { sunAt, zoneAt } from '../hooks/scene'
+import { zoneAt } from '../hooks/scene'
 
 const usage = (percent: number) => ({
   value: { startedAt: 0, context: { tokens: percent * 2000, window: 200000, percent }, rateLimits: [] },
@@ -310,13 +310,12 @@ test('con la opción de sonido desactivado el tema no suena', { options: { sonid
   expect(sets[sets.length - 1]?.sound).toBe(undefined)
 })
 
-test('los clics del fondo caen en la insignia, el viajero, el sol y el campamento', () => {
-  expect(zoneAt(0.1, 0.12, 50)).toBe('insignia')
-  expect(zoneAt(0.1, 0.85, 50)).toBe('viajero')
-  expect(zoneAt(0.95, 0.6, 50)).toBe('campamento')
-  const sun = sunAt(40)
-  expect(zoneAt(sun.x / 1600, (sun.y / 520) * 0.64, 40)).toBe('sol')
-  expect(zoneAt(0.5, 0.9, 40)).toBe(null)
+test('los clics del fondo caen en la insignia, el viajero o el campamento, y el sol no responde', () => {
+  expect(zoneAt(0.1, 0.12)).toBe('insignia')
+  expect(zoneAt(0.1, 0.85)).toBe('viajero')
+  expect(zoneAt(0.95, 0.6)).toBe('campamento')
+  expect(zoneAt(0.5, 0.2)).toBe(null)
+  expect(zoneAt(0.5, 0.9)).toBe(null)
 })
 
 // ─── 0.7.0: cerrar el día ─────────────────────────────────────────────
