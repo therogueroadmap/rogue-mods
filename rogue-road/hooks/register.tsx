@@ -421,7 +421,7 @@ async function recordTool($: EngineInterface, mode: Mode, isOk: boolean, mark: {
   await refreshWeather($, mode)
 }
 
-// ─── El sonido: se habilita o deshabilita con /sonido o desde la banda ─
+// ─── El sonido: se habilita o deshabilita con /sound o desde la banda ─
 
 const SOUND_KEY = 'sonido'
 
@@ -562,13 +562,13 @@ export const register: Register = (on, options) => {
 
     await $.command.register({ name: 'rogue-road-mod', description: 'Repinta el tema y muestra en qué punto del camino (y del día) va la sesión' })
     await $.command.register({ name: 'make-camp', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
-    await $.command.register({ name: 'bitacora', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
-    await $.command.register({ name: 'sonido', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
+    await $.command.register({ name: 'logbook', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
+    await $.command.register({ name: 'sound', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
     await $.command.register({ name: 'clear-trail', description: 'Limpia el sendero: vacía el contexto (/clear) y empieza de cero' })
     await $.command.register({ name: 'trail-log', description: 'Pide a Claude el resumen de la sesión para cerrar el día', argumentHint: '[foco]' })
     await $.command.register({ name: 'pass-the-map', description: 'Pasa el mapa: un handoff para continuar en una sesión nueva (skill handoff)', argumentHint: '[propósito de la próxima sesión]' })
 
-    // El sonido: lo último elegido con /sonido, salvo que la opción del mod haya cambiado desde entonces.
+    // El sonido: lo último elegido con /sound, salvo que la opción del mod haya cambiado desde entonces.
     const stored = (await $.store.get(SOUND_KEY).catch(() => undefined)) as { on?: unknown; config?: unknown } | undefined
     const isSound = stored?.config === soundConfig && typeof stored.on === 'boolean' ? stored.on : soundConfig === 'activado'
     await update($, isSoundOn, () => isSound)
@@ -950,7 +950,7 @@ export const register: Register = (on, options) => {
     return { text: '⇢ Pasando el mapa: Claude prepara el handoff y te dirá dónde quedó el archivo.' }
   })
 
-  on('command.run', { command: 'sonido' }, async ($, e) => {
+  on('command.run', { command: 'sound' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
     const want = /^(on|si|sí|activar|activado|1)$/.test(arg) ? true : /^(off|no|desactivar|desactivado|0)$/.test(arg) ? false : !(await read($, isSoundOn))
     await setSound($, mode, soundConfig, want)
@@ -958,11 +958,11 @@ export const register: Register = (on, options) => {
     return {
       text: want
         ? '♪ Sonido habilitado: el camino suena según la fase y el clima. En la app de escritorio, activa también el parlante de la barra de título.'
-        : '♪ Sonido deshabilitado. /sonido on lo vuelve a habilitar.',
+        : '♪ Sonido deshabilitado. /sound on lo vuelve a habilitar.',
     }
   })
 
-  on('command.run', { command: 'bitacora' }, async $ => {
+  on('command.run', { command: 'logbook' }, async $ => {
     const opened = await $.ui.open({ id: PANE, title: PANE_TITLE })
 
     return { text: opened.isPlaced ? 'Bitácora abierta.' : `La bitácora queda lista para abrirse: ${opened.reason}` }

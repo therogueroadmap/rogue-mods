@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-22
+
+### Changed
+- Every command is in English now: `/bitacora` is `/logbook` and `/sonido` is `/sound`, beside `/make-camp`, `/clear-trail`, `/trail-log`, `/pass-the-map` and `/rogue-road-mod`. The interface itself stays in Spanish.
+
 ## [0.7.2] - 2026-11-22
 
 ### Fixed

@@ -287,13 +287,13 @@ test('los subagentes caminan junto al viajero y se van al terminar', async ($, o
   expect((await backdrop($)).includes('companion c0')).toBe(false)
 })
 
-test('el tema suena por defecto, /sonido off lo silencia y la opción lo deja apagado', async ($, on) => {
+test('el tema suena por defecto, /sound off lo silencia y la opción lo deja apagado', async ($, on) => {
   const sets: { sound?: { ambience?: { layers: unknown[] } } }[] = []
   base(on, 92, sets)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   expect((sets[0]?.sound?.ambience?.layers.length ?? 0) > 0).toBe(true)
 
-  const off = await $.command.run({ command: 'sonido', args: 'off', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as never)
+  const off = await $.command.run({ command: 'sound', args: 'off', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as never)
   expect(off.text?.includes('deshabilitado')).toBe(true)
   expect(sets[sets.length - 1]?.sound).toBe(undefined)
 

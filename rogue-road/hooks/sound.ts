@@ -2,7 +2,7 @@
 // cambia, y señales breves que la app de escritorio toca por su cuenta. Son
 // números, no grabaciones: la app sintetiza cada capa. Suena solo cuando la
 // persona activa el parlante de la barra de título, y el mod lo habilita o
-// deshabilita con /sonido o el botón de la banda.
+// deshabilita con /sound o el botón de la banda.
 
 import type { ThemeSound } from 'claude-code'
 
