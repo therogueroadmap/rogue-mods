@@ -20,6 +20,7 @@ In the desktop app: + next to the prompt box → Plugins → Add marketplace (`t
 | Mod | Kind | Status |
 |---|---|---|
 | [`rasenshuriken`](rasenshuriken/) | Theme | In progress |
+| [`sharingan`](sharingan/) | Theme | In progress |
 
 Use one **theme** at a time: the last theme set wins. Other mods (panels, rows, commands) combine freely.
 
