@@ -82,7 +82,7 @@ Outfit (SIL OFL, la fuente del brand) para títulos, interfaz y texto; JetBrains
 
 ### Iconografía
 
-Rejilla de 24 × 24, trazo 2.6 redondeado, sin relleno, como los glifos de las insignias del brand (`therogueroadmap/.github`, `brand/src/glyphs`). El glifo de `rogue-road` (sol en el horizonte y camino) está en `assets/glyph-rogue-road.svg`; conviene sumarlo al build del brand para regenerar el ícono con resvg.
+Rejilla de 24 × 24, trazo 2.6 redondeado, sin relleno, como los glifos de las insignias del brand (`therogueroadmap/.github`, `brand/src/glyphs`). El glifo de `rogue-road` (sol en el horizonte y camino) está en `assets/glyph-rogue-road.svg` y en el build del brand (`brand/src/glyphs/rogue-road.svg`), que genera el ícono del mod con resvg 0.50.0, como los de `sharingan` y `rasenshuriken`.
 
 ### Usarlo
 

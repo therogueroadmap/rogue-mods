@@ -4,7 +4,7 @@
 
 ## [1.0.0] - 2026-11-22
 
-First stable release: the road, the explorer, the day's phases, milestones, weather, companions, the logbook, ambient sound, the interactive backdrop, the context ledger above the prompt, the closing commands (`/make-camp`, `/clear-trail`, `/trail-log`, `/pass-the-map`) and the mod's own language (es, en, fr). No changes since 0.10.5.
+First stable release: the road, the explorer, the day's phases, milestones, weather, companions, the logbook, ambient sound, the interactive backdrop, the context ledger above the prompt, the closing commands (`/make-camp`, `/clear-trail`, `/trail-log`, `/pass-the-map`) and the mod's own language (es, en, fr). The plugin icon now comes from the brand build (`brand/build.py`, resvg 0.50.0), as the other mods' icons do.
 
 ## [0.10.5] - 2026-11-22
 
