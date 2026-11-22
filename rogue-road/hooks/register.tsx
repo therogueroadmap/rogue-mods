@@ -868,7 +868,7 @@ export const register: Register = (on, options) => {
                 flexGrow={cells}
                 flexShrink={1}
                 height={1}
-                backgroundColor={row.kind === 'free' ? 'subtle' : row.kind === 'buffer' ? 'inactive' : row.color}
+                backgroundColor={row.kind === 'free' ? 'border' : row.kind === 'buffer' ? 'text-muted' : row.color}
               />
             ))}
           </Box>

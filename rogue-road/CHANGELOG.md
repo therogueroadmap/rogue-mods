@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-22
+
+### Fixed
+- The context bar in the desktop app drew the free space as a dark block, heavier than the used categories. It now takes the theme's border tone, light by day and dim at night, and the autocompaction buffer the muted text tone, so the bar reads as `/context` does.
+
 ## [0.10.0] - 2026-11-22
 
 ### Added
