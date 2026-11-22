@@ -118,6 +118,11 @@ const statusOf = (trail: Trail, pace: Pace): string => {
   return `${ph.icon} ${ph.name}${pct} · ${pace === 'explora' ? 'explorando' : 'esperándote'}`
 }
 
+// El tema se pinta una vez por fase y por carga del módulo: si el mod se carga
+// a mitad de sesión, o la app se conecta después, el primer evento lo pinta.
+let paintedPhase = -1
+let lastDraw = 'sin pintar aún'
+
 async function applyPhase($: EngineInterface, i: number, mode: Mode): Promise<void> {
   const set = await $.theme.set(look(i, mode)).catch(async (error: unknown) => {
     // Una versión que no acepta `style`: el tema sin estilos de mensaje.
@@ -126,8 +131,17 @@ async function applyPhase($: EngineInterface, i: number, mode: Mode): Promise<vo
 
     return $.theme.set(plain)
   })
-  if (!set.isDrawn && set.reason !== undefined) {
-    $.ui.log(`rogue-road: ${set.reason}`)
+  paintedPhase = set.isDrawn ? i : -1
+  lastDraw = set.isDrawn ? 'pintado' : `no pintado: ${set.reason ?? 'sin motivo'}`
+  if (!set.isDrawn) {
+    $.ui.log(`rogue-road: ${lastDraw}`)
+  }
+}
+
+async function ensurePainted($: EngineInterface, mode: Mode): Promise<void> {
+  const { phase } = await read($, trail)
+  if (paintedPhase !== phase) {
+    await applyPhase($, phase, mode)
   }
 }
 
@@ -197,8 +211,10 @@ export const register: Register = (on, options) => {
       await update($, trail, () => ({ phase, percent }))
       $.ui.status(statusOf({ phase, percent }, await read($, pace)))
 
-      if (before.phase !== phase) {
+      if (before.phase !== phase || paintedPhase !== phase) {
         await applyPhase($, phase, mode)
+      }
+      if (before.phase !== phase) {
         const ph = phaseAt(phase)
         if (phase < before.phase) {
           $.ui.toast(`Nuevo amanecer: ${ph.name}. El campamento quedó atrás y el camino sigue.`)
@@ -215,6 +231,14 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
+  // Una app que se conecta después del inicio recibe el tema.
+  on('session.attach', async ($, e, next) => {
+    const result = await next(e)
+    await applyPhase($, (await read($, trail)).phase, mode)
+
+    return result
+  })
+
   // ─── Caminar o esperar ─────────────────────────────────────────────
   // Camina mientras Claude trabaja; se detiene (con su farol y un globo de
   // espera) cuando Claude necesita a la persona: al terminar el turno, ante
@@ -224,6 +248,7 @@ export const register: Register = (on, options) => {
     const result = await next(e)
     if (e.agentId === undefined) {
       await setPace($, 'explora')
+      await ensurePainted($, mode)
     }
 
     return result
@@ -345,6 +370,8 @@ export const register: Register = (on, options) => {
     const phase = phaseOf(percent)
     await update($, trail, () => ({ phase, percent }))
     await update($, isBandHidden, () => false)
+    await applyPhase($, phase, mode)
+    const surfaces = await $.session.surfaces()
     const ph = phaseAt(phase)
     const road = miniRoad(percent, await read($, pace), 24)
     const ladder = PHASES.map((x, k) => {
@@ -361,6 +388,8 @@ export const register: Register = (on, options) => {
         ph.tip,
         '',
         ladder,
+        '',
+        `Superficies: ${surfaces.length === 0 ? 'ninguna' : surfaces.join(', ')} · fondo ${lastDraw}`,
       ].join('\n'),
     }
   })
