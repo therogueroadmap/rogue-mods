@@ -1,0 +1,23 @@
+{
+  "name": "sharingan",
+  "version": "0.1.0",
+  "description": "Theme for Claude: a Sharingan that gains tomoe as the context window fills up, until the Mangekyō marks the genjutsu of a degraded context. Kai compacts. Dark and light modes.",
+  "author": {
+    "name": "José R. Pérez Sandó",
+    "email": "contact@therogueroadmap.com"
+  },
+  "homepage": "https://github.com/therogueroadmap/rogue-mods/tree/main/sharingan",
+  "repository": "https://github.com/therogueroadmap/rogue-mods",
+  "license": "MIT",
+  "keywords": ["theme", "mod", "context-window", "naruto", "claude-code"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "modo": {
+      "type": "string",
+      "title": "Modo de color",
+      "description": "auto sigue el modo de la app; claro u oscuro lo fijan",
+      "options": ["auto", "claro", "oscuro"],
+      "default": "auto"
+    }
+  }
+}

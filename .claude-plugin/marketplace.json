@@ -12,6 +12,12 @@
       "description": "Theme: a Rasenshuriken that decays into a simple Rasengan as the context window fills up. Dark and light modes.",
       "source": "./rasenshuriken",
       "category": "personalization"
+    },
+    {
+      "name": "sharingan",
+      "description": "Theme: a Sharingan that gains tomoe as the context window fills up, until the Mangekyō marks the genjutsu of a degraded context. Kai compacts. Dark and light modes.",
+      "source": "./sharingan",
+      "category": "personalization"
     }
   ]
 }
