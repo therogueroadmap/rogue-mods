@@ -36,7 +36,7 @@ What it adds:
 
 - **Closing the day.** `/clear-trail` clears the context and starts from nothing. `/trail-log [focus]` asks Claude for an end-of-session summary. `/pass-the-map [purpose]` asks Claude for a handoff file a new session can pick up, with the [`handoff`](https://github.com/mattpocock/skills/blob/main/docs/productivity/handoff.md) skill when it is installed. Both attach the day's logbook.
 
-Version 0.7.1.
+Version 0.7.2.
 
 ### Install
 

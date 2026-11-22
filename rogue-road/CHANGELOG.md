@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-22
+
+### Fixed
+- The ambient sound was too quiet to hear: its layers ran from 0.025 to 0.09 and the app never turns a layer up. They now sit between 0.1 and 0.35, the cues between 0.14 and 0.45, and the chords start in the third octave so small speakers play them.
+
 ## [0.7.1] - 2026-11-22
 
 ### Changed
