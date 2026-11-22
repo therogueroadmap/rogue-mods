@@ -124,3 +124,20 @@ test('el fondo lleva la insignia con la fase y el contexto, y no pasa del límit
   expect(source.length <= 126000).toBe(true)
   await ui.unmount()
 })
+
+test('el explorador vive en la viñeta del costado y al anochecer arde la fogata', async ($, on) => {
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', () => usage(94))
+  on('theme.set', () => ({ value: { isDrawn: true, requestId: 't' } }))
+  on('ui.status', () => ({ value: undefined }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'rogue-road', component: 'Backdrop', surface: 'desktop', props: { scene: 'fase-6-auto', plugin: 'rogue-road', glass: false } } as never)
+  const svg = (await ui.find({ type: 'Svg' } as never)) as { props?: { source?: string } } | undefined
+  const source = svg?.props?.source ?? ''
+  expect(source.includes('<g class="vignette espera"')).toBe(true)
+  expect(source.includes('class="flame"')).toBe(true)
+  expect(source.includes('opacity="1.00" display="none"')).toBe(false)
+  await ui.unmount()
+})

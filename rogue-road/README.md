@@ -6,7 +6,9 @@
 
 A theme for Claude's interface built on The Rogue Roadmap brand. A hooded explorer — the rogue — walks a winding road. The road is the context window: the explorer sets out at **dawn** with an empty context, and every answer pushes the sun west until **dusk** marks a context that is nearly full. **Acampar** (camp) compacts the conversation, and a new day begins.
 
-The explorer walks only while Claude works. When Claude needs you — the turn ended, a permission prompt, a question, a plan to approve — it stops, lights its lantern and waits with a bubble over its head.
+The explorer lives in a vignette in the bottom-left corner, beside the conversation. While Claude works it walks in place and the world scrolls behind it. When Claude needs you — the turn ended, a permission prompt, a question, a plan to approve — everything stops: it lights its lantern and waits with a bubble over its head. On the landscape behind, an orange marker shows how far along the road it is.
+
+The day also changes the light: the mountains glow on the sun's side, the explorer's shadow is long at dawn and dusk, haze thickens through the day, birds cross the morning, fireflies come out at dusk and a campfire burns at the camp at nightfall.
 
 | Context used | Phase | Scene |
 |---|---|---|
@@ -26,7 +28,7 @@ What it adds:
 - A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road` with the details and `/acampar` to compact.
 
-Version 0.2.0.
+Version 0.3.0.
 
 ### Install
 
@@ -60,6 +62,8 @@ In progress.
 Tema para la interfaz de Claude con el brand de The Rogue Roadmap. Un explorador encapuchado —el rogue— recorre un camino sinuoso que es la ventana de contexto: sale al **amanecer** con el contexto vacío y cada respuesta empuja el sol hacia el oeste, hasta que el **atardecer** y el anochecer marcan un contexto casi lleno. **Acampar** (`/acampar` o el botón `⛺ Acampar`) compacta la conversación y empieza un nuevo día.
 
 El explorador solo camina mientras Claude trabaja. Cuando Claude te necesita (terminó el turno, pide un permiso, hace una pregunta o espera que apruebes un plan) se detiene, enciende su farol y espera con un globo sobre la cabeza.
+
+El explorador vive en una viñeta en la esquina inferior izquierda: camina en el lugar con el mundo desplazándose detrás mientras Claude trabaja, y se detiene a esperarte cuando Claude te necesita. La luz, las sombras, la bruma, los pájaros, las luciérnagas y la fogata siguen la hora del día.
 
 Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y navy (oscuro) del brand con un acento que sigue la hora del día, estilos de mensaje, una banda sobre el prompt con un camino en miniatura que también funciona en la terminal, una entrada en la línea de estado, avisos al cambiar de fase y los comandos `/rogue-road` y `/acampar`. La instalación, los ajustes y los requisitos están en la sección en inglés.
 

@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-22
+
+### Changed
+- The explorer moved out of the conversation into a vignette in the bottom-left corner. While Claude works it walks in place and the world scrolls behind it (far pines slowly, stones, grass and a waymark post quickly, the trail under its feet); when Claude needs the person everything stops and it waits, breathing, with its lantern lit and a bubble over its head. On the map across the landscape, an orange marker shows where it is.
+
+### Added
+- Light and shadow from the sun: the mountains glow on the side the sun is on, the near ridge has a rim of light, and the explorer casts a shadow that is long at dawn and dusk, short at noon, and falls away from the sun.
+- An atmosphere that follows the context: haze between the mountain ranges thickens through the day, birds cross the morning sky, fireflies come out at dusk and a campfire with smoke burns at the camp at nightfall.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added

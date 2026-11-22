@@ -195,8 +195,12 @@ const GROUND_Y = (() => {
 
 // Montañas lejanas: picos suaves sobre el horizonte, extendidas a los lados
 // para pantallas anchas.
-const FAR_D = ridge(-1600, 3200, 40, x => HORIZON + 10 - 70 * Math.abs(Math.sin(x / 260)) - 30 * Math.abs(Math.sin(x / 97 + 1.3)), 1200)
-const MID_D = ridge(-1600, 3200, 40, x => HORIZON + 34 - 34 * Math.abs(Math.sin(x / 180 + 0.7)) - 12 * Math.sin(x / 61), 1200)
+const farY = (x        )         => HORIZON + 10 - 70 * Math.abs(Math.sin(x / 260)) - 30 * Math.abs(Math.sin(x / 97 + 1.3))
+const midY = (x        )         => HORIZON + 34 - 34 * Math.abs(Math.sin(x / 180 + 0.7)) - 12 * Math.sin(x / 61)
+const FAR_D = ridge(-1600, 3200, 40, farY, 1200)
+const MID_D = ridge(-1600, 3200, 40, midY, 1200)
+
+const NEAR_RIM = `M${GROUND_X.flatMap((x, i) => (x >= -400 && x <= 2000 ? [`${x} ${r1(GROUND_Y[i] ?? 486)}`] : [])).join(' L')}`
 const NEAR_D = `M-1600 1600 L${GROUND_X.map((x, i) => `${x} ${r1(GROUND_Y[i] ?? 486)}`).join(' L')} L3200 1600 Z`
 
 /** Posición del sol: sale por la izquierda, culmina al mediodía y se pone por la derecha pasado el 90 %. */
@@ -239,6 +243,62 @@ const STARS = [
   [120, 60], [260, 140], [410, 40], [530, 110], [700, 70], [860, 30], [990, 120], [1130, 60], [1270, 150], [1420, 50], [1520, 120],
   [340, 210], [780, 190], [1200, 230], [60, 200],
 ]
+
+// ─── La viñeta del explorador ────────────────────────────────────────
+// El explorador vive en la esquina inferior izquierda, fuera de la columna de
+// lectura. Camina en el lugar y el mundo se desplaza detrás de él (parallax):
+// pinos lejanos lentos, piedras y matas cercanas rápidas, el sendero bajo los
+// pies. En espera todo se detiene y él aguarda con el farol encendido.
+
+const VG_GROUND = 846
+const VG_LOOP = 400
+
+const farPines = ()         => {
+  let d = ''
+  for (let copy = 0; copy < 2; copy++) {
+    for (const [x, h] of [[10, 34], [46, 22], [120, 40], [150, 28], [236, 30], [300, 46], [330, 26], [372, 34]]         ) {
+      const bx = x + copy * VG_LOOP
+      d += `M${bx - h * 0.32} 812L${bx} ${812 - h}L${bx + h * 0.32} 812Z`
+    }
+  }
+
+  return d
+}
+
+const nearThings = ()         => {
+  let stones = ''
+  let grass = ''
+  for (let copy = 0; copy < 2; copy++) {
+    const o = copy * VG_LOOP
+    for (const [x, rx] of [[40, 9], [210, 6], [330, 12]]         ) {
+      stones += `M${x + o - rx} ${VG_GROUND + 14}a${rx} ${rx * 0.6} 0 0 1 ${rx * 2} 0Z`
+    }
+    for (const x of [90, 150, 260, 300, 380]) {
+      grass += `M${x + o} ${VG_GROUND + 12}l3 -11M${x + o + 4} ${VG_GROUND + 12}l1 -8M${x + o + 7} ${VG_GROUND + 12}l-2 -9`
+    }
+  }
+  // Un poste del camino, una vez por vuelta.
+  const posts = [170, 170 + VG_LOOP]
+    .map(x => `<g class="post"><rect x="${x}" y="${VG_GROUND - 40}" width="4" height="52" rx="1"/><path d="M${x - 2} ${VG_GROUND - 38}h30l7 6l-7 6h-30Z"/></g>`)
+    .join('')
+
+  return `<path class="vg-stone" d="${stones}"/><path class="vg-grass" d="${grass}"/>${posts}`
+}
+
+const FAR_PINES = farPines()
+const NEAR_THINGS = nearThings()
+
+const vignette = (pace      , shadowLen        , shadowDir        , shadowAlpha        , fireflies        )         => `<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMax meet" overflow="visible">
+<g class="vignette ${pace}" mask="url(#rrVgMask)">
+<path class="vg-ground" d="M-60 900V${VG_GROUND - 4}Q140 ${VG_GROUND - 22} 520 ${VG_GROUND}V900Z"/>
+<g class="vg-scroll vg-far">${`<path class="vg-pines" d="${FAR_PINES}"/>`}</g>
+<path class="vg-path" d="M-60 ${VG_GROUND + 6}H460"/>
+<g class="vg-scroll vg-near">${NEAR_THINGS}</g>
+<ellipse class="vg-shadow" cx="${r1(150 + (shadowDir * shadowLen) / 2)}" cy="${VG_GROUND + 2}" rx="${r1(shadowLen / 2 + 14)}" ry="6" opacity="${shadowAlpha.toFixed(2)}"/>
+<g transform="translate(150 ${VG_GROUND}) scale(2.1)"><g class="${pace}">${ROGUE}</g></g>
+<g opacity="${fireflies.toFixed(2)}">${[[60, 760], [250, 720], [320, 800], [110, 690], [380, 740]].map(([x, y], i) => `<circle class="firefly" cx="${x}" cy="${y}" r="2.6" style="animation-delay: -${i * 1.7}s"/>`).join('')}</g>
+</g>
+</svg>`
 
                           
                         
@@ -295,16 +355,25 @@ const compose = ({ percent, pace, mode, label = '' }            , lite         )
         : `svg { ${light} } @media (prefers-color-scheme: dark) { svg { ${dark} } }`
 
   const f = 0.03 + 0.94 * (Math.min(p, 100) / 100)
-  const step = roadStep(f)
-  const [rx, ry] = [step.x, step.y]
-  // Más pequeño a lo lejos, cerca del horizonte; mira hacia donde avanza.
-  const depth = 0.8 + clamp((ry - 343) / (470 - 343), 0, 1) * 0.55
-  const facing = step.isLeftward ? -depth : depth
+  const [rx, ry] = roadPoint(f)
   const sun = sunAt(p)
   const stars = clamp((p - 78) / 18, 0, 1)
   const warm = clamp(Math.abs(p - 45) / 45, 0, 1)
   const sunColor = mix('#FFD27A', BRAND.orange, warm)
   const glow = 0.35 + 0.35 * warm
+  // Luz y sombra: de qué lado está el sol y qué tan alto va.
+  const side = clamp((sun.x - 800) / 660, -1, 1)
+  const height = Math.sin(clamp(p / 90, 0, 1) * Math.PI)
+  const litAlpha = (0.2 + 0.5 * Math.abs(side)) * (1 - stars * 0.85)
+  const shadowLen = 24 + 150 * (1 - height)
+  const shadowDir = side < 0 ? 1 : -1
+  const shadowAlpha = 0.4 * (1 - stars * 0.6)
+  // La atmósfera sigue al contexto: bruma que crece, pájaros por la mañana,
+  // luciérnagas al atardecer y la fogata del campamento al anochecer.
+  const haze = 0.06 + 0.34 * clamp(p / 100, 0, 1)
+  const birds = clamp((p - 6) / 8, 0, 1) * clamp((46 - p) / 10, 0, 1)
+  const fireflies = clamp((p - 68) / 10, 0, 1) * clamp((99 - p) / 6, 0, 1)
+  const fire = clamp((p - 84) / 6, 0, 1)
   const milestones = [0.25, 0.5, 0.75]
     .map(m => {
       const [mx, my] = roadPoint(0.03 + 0.94 * m)
@@ -328,6 +397,16 @@ ${palette}
 @keyframes rr-breathe { 0%, 100% { opacity: 0.35 } 50% { opacity: 0.8 } }
 @keyframes rr-drift { 0% { transform: translateX(0) } 100% { transform: translateX(60px) } }
 @keyframes rr-twinkle { 0%, 100% { opacity: 0.4 } 50% { opacity: 1 } }
+@keyframes rr-scroll { to { transform: translateX(-${VG_LOOP}px) } }
+@keyframes rr-trail { to { stroke-dashoffset: -24 } }
+@keyframes rr-idle { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(0.7px) } }
+@keyframes rr-pulse { 0% { transform: scale(0.6); opacity: 0.6 } 100% { transform: scale(1.6); opacity: 0 } }
+@keyframes rr-glide { 0% { transform: translate(0, 0) } 100% { transform: translate(260px, -30px) } }
+@keyframes rr-flap { 0%, 100% { transform: scaleY(1) } 50% { transform: scaleY(0.55) } }
+@keyframes rr-float { 0% { transform: translate(0, 0) } 100% { transform: translate(14px, -22px) } }
+@keyframes rr-glim { 0%, 100% { opacity: 0.15 } 50% { opacity: 1 } }
+@keyframes rr-flame { 0%, 100% { transform: scale(1, 1) } 50% { transform: scale(0.92, 1.12) } }
+@keyframes rr-smoke { 0% { transform: translate(0, 0) scale(0.6); opacity: 0 } 15% { opacity: 0.35 } 100% { transform: translate(-30px, -90px) scale(2.2); opacity: 0 } }
 .s-top { stop-color: var(--top) } .s-mid { stop-color: var(--mid) } .s-hor { stop-color: var(--horizon) }
 .s-ground { stop-color: var(--ground) }
 .far { fill: var(--far); opacity: 0.75 } .midr { fill: var(--far) } .near { fill: var(--near) }
@@ -359,6 +438,29 @@ ${palette}
 .espera .bubble { opacity: 1 }
 .espera .dot { animation: rr-dot 2.4s ease-in-out infinite } .espera .d2 { animation-delay: 0.4s } .espera .d3 { animation-delay: 0.8s }
 .espera .lamp-glow { opacity: 0.5; animation: rr-breathe 4s ease-in-out infinite }
+.espera .rogue-body { animation: rr-idle 4s ease-in-out infinite }
+.rim { fill: none; stroke: ${sunColor}; stroke-width: 2; stroke-linejoin: round }
+.haze-band { stop-color: var(--horizon) }
+.marker-dot { fill: var(--trail); stroke: var(--bubble); stroke-width: 2 }
+.marker-pulse { fill: var(--trail); opacity: 0; transform-box: fill-box; transform-origin: center }
+.explora .marker-pulse { animation: rr-pulse 1.6s ease-out infinite }
+.bird { fill: none; stroke: var(--figure); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; animation: rr-flap 1.2s ease-in-out infinite }
+.birds { animation: rr-glide 80s linear infinite alternate }
+.firefly { fill: #FFE08A; animation: rr-float 7s ease-in-out infinite alternate, rr-glim 4s ease-in-out infinite }
+.flame { fill: ${BRAND.orange}; transform-box: fill-box; transform-origin: 50% 100%; animation: rr-flame 1.8s ease-in-out infinite }
+.flame-core { fill: #FFD27A }
+.log { stroke: var(--figure); stroke-width: 3; stroke-linecap: round }
+.smoke { fill: #C9CFDA; opacity: 0; transform-box: fill-box; transform-origin: center; animation: rr-smoke 8s linear infinite }
+.vg-ground { fill: var(--near) }
+.vg-pines { fill: var(--far); opacity: 0.7 }
+.vg-stone { fill: var(--road) } .vg-grass { fill: none; stroke: var(--road); stroke-width: 1.6; stroke-linecap: round }
+.post rect, .post path { fill: var(--road) }
+.vg-path { fill: none; stroke: var(--trail); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 10 14; opacity: 0.8 }
+.vg-shadow { fill: #0A1B35 }
+.vg-far { animation: rr-scroll 40s linear infinite }
+.vg-near { animation: rr-scroll 10s linear infinite }
+.vignette.explora .vg-path { animation: rr-trail 0.6s linear infinite }
+.vignette.espera .vg-scroll { animation-play-state: paused }
 .badge-box { fill: ${BRAND.navy}; opacity: 0.82 }
 .ring-track { fill: none; stroke: ${BRAND.cream}; stroke-opacity: 0.22; stroke-width: 5 }
 .ring { fill: none; stroke: ${BRAND.orange}; stroke-width: 5; stroke-linecap: round }
@@ -373,6 +475,16 @@ ${palette}
 <linearGradient id="rrMist" x1="0" y1="0" x2="0" y2="1">
 <stop offset="0" class="s-ground" stop-opacity="0"/><stop offset="0.4" class="s-ground" stop-opacity="0.86"/><stop offset="1" class="s-ground" stop-opacity="1"/>
 </linearGradient>
+<radialGradient id="rrLight" gradientUnits="userSpaceOnUse" cx="${r1(sun.x)}" cy="${r1(Math.max(sun.y, HORIZON - 60))}" r="760">
+<stop offset="0" stop-color="${sunColor}" stop-opacity="0.85"/><stop offset="0.55" stop-color="${sunColor}" stop-opacity="0.25"/><stop offset="1" stop-color="${sunColor}" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="rrHaze" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" class="haze-band" stop-opacity="0"/><stop offset="0.55" class="haze-band" stop-opacity="1"/><stop offset="1" class="haze-band" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="rrVgFade" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#FFFFFF"/><stop offset="1" stop-color="#000000"/>
+</linearGradient>
+<mask id="rrVgMask" maskUnits="userSpaceOnUse" x="-80" y="560" width="520" height="360"><rect x="-80" y="560" width="520" height="360" fill="url(#rrVgFade)"/></mask>
 <clipPath id="rrBadgeClip"><circle cx="42" cy="42" r="30"/></clipPath>
 <radialGradient id="rrSun"><stop offset="0.3" class="sun-glow" stop-opacity="${glow.toFixed(2)}"/><stop offset="1" class="sun-glow" stop-opacity="0"/></radialGradient>
 </defs>
@@ -392,23 +504,37 @@ ${STARS.map(([x, y], i) => `<circle class="${i % 3 === 0 ? 'star tw' : 'star'}" 
 <path class="cloud" d="M200 150 h140 a22 22 0 0 0 -30 -26 a34 34 0 0 0 -62 -8 a24 24 0 0 0 -48 34 Z"/>
 <path class="cloud" d="M980 96 h180 a26 26 0 0 0 -36 -30 a40 40 0 0 0 -74 -10 a28 28 0 0 0 -70 40 Z"/>
 </g>
+<!-- pájaros por la mañana -->
+<g class="birds" opacity="${birds.toFixed(2)}"${lite || birds === 0 ? ' display="none"' : ''}>
+<path class="bird" d="M380 200q7 -7 14 0q7 -7 14 0"/><path class="bird" d="M418 186q6 -6 12 0q6 -6 12 0" style="animation-delay: -0.4s"/><path class="bird" d="M350 214q5 -5 10 0q5 -5 10 0" style="animation-delay: -0.8s"/>
+</g>
 <!-- montañas -->
-${lite ? '' : `<path class="far" d="${FAR_D}"/>`}
+${lite ? '' : `<path class="far" d="${FAR_D}"/><path d="${FAR_D}" fill="url(#rrLight)" opacity="${litAlpha.toFixed(2)}"/>`}
+<!-- bruma entre planos: crece con el día -->
+<rect x="-1600" y="${HORIZON - 110}" width="4800" height="170" fill="url(#rrHaze)" opacity="${haze.toFixed(2)}"/>
 <path class="midr" d="${MID_D}" opacity="0.9"/>
+<path d="${MID_D}" fill="url(#rrLight)" opacity="${(litAlpha * 0.8).toFixed(2)}"/>
 <path class="near" d="${NEAR_D}"/>
+<path class="rim" d="${NEAR_RIM}" opacity="${(litAlpha * 0.8).toFixed(2)}"/>
 <!-- el camino: punteado por delante, naranja lo recorrido -->
 <path class="road-ahead" d="${ROAD_D}"/>
 <path class="road-done" d="${ROAD_D}" pathLength="100" stroke-dasharray="${r1(f * 100)} 200"/>
 ${lite ? '' : milestones}
 <!-- el campamento al final del camino -->
 <g transform="translate(${r1(cx)} ${r1(cy)})"><path class="tent" d="M-16 0 L0 -22 L16 0 Z"/><path class="tent-door" d="M-4 0 L0 -8 L4 0 Z"/><line class="pole thin" x1="0" y1="-22" x2="0" y2="-34"/><path class="flag" d="M0 -34 L10 -31 L0 -28 Z"/></g>
-<!-- el explorador -->
-<g class="${pace}" transform="translate(${r1(rx)} ${r1(ry)}) scale(${facing.toFixed(2)} ${depth.toFixed(2)})">
-${ROGUE}
+<!-- la fogata del campamento al anochecer -->
+<g transform="translate(${r1(cx - 34)} ${r1(cy)})" opacity="${fire.toFixed(2)}"${fire === 0 ? ' display="none"' : ''}>
+<line class="log" x1="-9" y1="0" x2="9" y2="-4"/><line class="log" x1="-9" y1="-4" x2="9" y2="0"/>
+<path class="flame" d="M0 -3C-7 -8 -4 -15 0 -22C4 -15 7 -8 0 -3Z"/><path class="flame-core" d="M0 -4C-3 -7 -2 -11 0 -14C2 -11 3 -7 0 -4Z"/>
+<circle class="smoke" cx="0" cy="-26" r="5"/><circle class="smoke" cx="0" cy="-26" r="5" style="animation-delay: -2.7s"/><circle class="smoke" cx="0" cy="-26" r="5" style="animation-delay: -5.4s"/>
 </g>
+<!-- dónde va el explorador en el mapa -->
+<g class="${pace}" transform="translate(${r1(rx)} ${r1(ry)})"><circle class="marker-pulse" r="12"/><circle class="marker-dot" r="6"/></g>
 </svg>
 <!-- bruma: el paisaje se funde con la página bajo la conversación -->
 <rect y="58%" width="100%" height="42%" fill="url(#rrMist)"/>
+<!-- el explorador, en la viñeta del costado -->
+${vignette(pace, shadowLen, shadowDir, shadowAlpha, lite ? 0 : fireflies)}
 <!-- insignia: siempre a la vista en la esquina -->
 ${badge(p, pace, label)}
 </svg>`
