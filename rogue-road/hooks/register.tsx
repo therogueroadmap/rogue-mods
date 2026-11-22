@@ -179,6 +179,118 @@ function camp($: EngineInterface): void {
   })
 }
 
+// /clear-trail encarga el /clear de Claude Code: el contexto empieza de cero.
+const CLEAR_TEXT = '⌫ Limpiando el sendero: el contexto se vacía en cuanto Claude queda libre. La bitácora conserva lo recorrido.'
+
+function clearTrail($: EngineInterface): void {
+  void addEntry($, 'limpieza', 'Limpia el sendero: el contexto empieza de cero')
+  $.command.run({ command: 'clear', args: '' }).catch((error: unknown) => {
+    $.ui.log(`rogue-road: no se pudo limpiar el sendero: ${String(error)}`)
+    $.ui.toast('No se pudo limpiar el sendero. Usa /clear directamente.')
+  })
+}
+
+/**
+ * Corre lo que quedó pendiente (acampar o limpiar) apenas termina el comando
+ * que lo pidió. Si la sesión aún está ocupada, lo deja pendiente para el fin
+ * del próximo turno.
+ */
+function runSoon($: EngineInterface): void {
+  $.clock.after(400, () => {
+    void runPendingNow($)
+  })
+}
+
+async function tryCommand($: EngineInterface, command: string, args: string): Promise<boolean> {
+  try {
+    await $.command.run({ command, args })
+
+    return true
+  } catch (error) {
+    $.ui.log(`rogue-road: /${command} queda para el fin del turno: ${String(error)}`)
+
+    return false
+  }
+}
+
+async function runPendingNow($: EngineInterface): Promise<void> {
+  if (await read($, isCampPending)) {
+    await update($, isCampPending, () => false)
+    if (await tryCommand($, 'compact', CAMP_FOCUS)) {
+      await addEntry($, 'acampada', 'Acampa: la conversación se compacta')
+    } else {
+      await update($, isCampPending, () => true)
+    }
+  }
+  if (await read($, isClearPending)) {
+    await update($, isClearPending, () => false)
+    if (await tryCommand($, 'clear', '')) {
+      await addEntry($, 'limpieza', 'Limpia el sendero: el contexto empieza de cero')
+    } else {
+      await update($, isClearPending, () => true)
+    }
+  }
+}
+
+/**
+ * Le encarga un turno al modelo apenas termina el comando que lo pide: un
+ * comando no puede enviar un prompt mientras ocupa la sesión.
+ */
+function submitSoon($: EngineInterface, text: string, what: string): void {
+  $.clock.after(200, () => {
+    $.prompt.submit({ text }).catch((error: unknown) => {
+      $.ui.log(`rogue-road: no se pudo ${what}: ${String(error)}`)
+      $.ui.toast(`No se pudo ${what}. Inténtalo de nuevo cuando Claude termine.`)
+    })
+  })
+}
+
+const KIND_TEXT: Record<EntryKind, string> = {
+  commit: 'commit', tests: 'tests en verde', pr: 'PR', push: 'push', fase: 'fase', amanecer: 'amanecer', clima: 'clima',
+  compañero: 'compañero', acampada: 'acampada', limpieza: 'limpieza', resumen: 'resumen', relevo: 'relevo',
+}
+
+/** La bitácora del día como lista para el modelo. */
+const digest = (list: Entry[]): string => {
+  const lines = today(list)
+    .filter(x => x.kind !== 'resumen' && x.kind !== 'relevo')
+    .slice(-60)
+    .map(x => `- ${clockOf(x.at)} · ${x.percent} % · ${KIND_TEXT[x.kind]}: ${x.label}`)
+
+  return lines.length === 0 ? '- (sin entradas)' : lines.join('\n')
+}
+
+const trailLogPrompt = (focus: string, log: string): string => `Cierra el día de viaje con un resumen de esta sesión (lo pide /trail-log, del mod rogue-road). Escríbelo en el idioma de la conversación, breve y fácil de escanear:
+
+1. Objetivo de la sesión.
+2. Qué se hizo: cambios concretos, con hashes de commit, ramas y URLs de PR cuando existan.
+3. Decisiones tomadas y por qué.
+4. Qué quedó pendiente o sin verificar. Márcalo como tal: no des por hecho lo que no comprobaste.
+5. Próximos pasos sugeridos.
+
+No hagas cambios ni ejecutes comandos: solo resume lo que ya pasó.${focus === '' ? '' : `\n\nFoco pedido: ${focus}`}
+
+Bitácora del mod (hitos, fases y clima de hoy):
+${log}`
+
+const passTheMapPrompt = (purpose: string, log: string): string => `Pasa el mapa: prepara un handoff para que una sesión nueva continúe este trabajo (lo pide /pass-the-map, del mod rogue-road).
+
+Propósito de la próxima sesión: ${purpose === '' ? 'continuar el trabajo en curso' : purpose}
+
+Si la skill \`handoff\` está disponible, úsala con ese propósito. Si no lo está, escribe tú el documento con sus mismas reglas:
+
+- Un solo archivo markdown en el directorio temporal del sistema ($TMPDIR, si no /tmp; %TEMP% en Windows), no en el repositorio.
+- El hilo vivo: qué está en curso, por qué y qué sigue, orientado al propósito indicado.
+- Referencia specs, planes, issues, commits y diffs por ruta o URL; no los copies.
+- Una sección «Skills sugeridas» con lo que debería usar el próximo agente.
+- Ningún secreto: claves, tokens o contraseñas quedan redactados.
+- Distingue lo verificado de lo supuesto: no escribas como hecho algo que no comprobaste.
+
+Al terminar, dime la ruta exacta del archivo y recuérdame copiarlo a un lugar duradero si la próxima sesión no empieza pronto o corre en otra máquina. No cambies nada más.
+
+Bitácora del mod (hitos, fases y clima de hoy):
+${log}`
+
 /** Camino en miniatura para la terminal: recorrido (• en cada hito), explorador, por recorrer y campamento. */
 const miniRoad = (percent: number | null, pace: Pace, cells = 18, marks: number[] = []): { done: string; rogue: string; ahead: string } => {
   const cellOf = (p: number): number => Math.round((Math.min(Math.max(p, 0), 100) / 100) * (cells - 1))
@@ -196,6 +308,7 @@ const trail = atom({ plugin: 'rogue-road', key: 'trail' } as const, { phase: 0, 
 const pace = atom({ plugin: 'rogue-road', key: 'pace' } as const, 'espera' as Pace)
 const isBandHidden = atom({ plugin: 'rogue-road', key: 'isBandHidden' } as const, false)
 const isCampPending = atom({ plugin: 'rogue-road', key: 'isCampPending' } as const, false)
+const isClearPending = atom({ plugin: 'rogue-road', key: 'isClearPending' } as const, false)
 const ledger = atom({ plugin: 'rogue-road', key: 'ledger' } as const, null as Ledger | null)
 const isDetailed = atom({ plugin: 'rogue-road', key: 'isDetailed' } as const, true)
 const journal = atom({ plugin: 'rogue-road', key: 'journal' } as const, [] as Entry[])
@@ -325,6 +438,7 @@ const PANE_TITLE = 'Bitácora del viaje'
 
 const ENTRY_ICON: Record<EntryKind, string> = {
   commit: '●', tests: '✓', pr: '⇡', push: '↑', fase: '◐', amanecer: '◓', clima: '~', compañero: '⚇', acampada: '⛺',
+  limpieza: '⌫', resumen: '✎', relevo: '⇢',
 }
 
 const clockOf = (ms: number): string => {
@@ -450,6 +564,9 @@ export const register: Register = (on, options) => {
     await $.command.register({ name: 'acampar', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
     await $.command.register({ name: 'bitacora', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
     await $.command.register({ name: 'sonido', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
+    await $.command.register({ name: 'clear-trail', description: 'Limpia el sendero: vacía el contexto (/clear) y empieza de cero' })
+    await $.command.register({ name: 'trail-log', description: 'Pide a Claude el resumen de la sesión para cerrar el día', argumentHint: '[foco]' })
+    await $.command.register({ name: 'pass-the-map', description: 'Pasa el mapa: un handoff para continuar en una sesión nueva (skill handoff)', argumentHint: '[propósito de la próxima sesión]' })
 
     // El sonido: lo último elegido con /sonido, salvo que la opción del mod haya cambiado desde entonces.
     const stored = (await $.store.get(SOUND_KEY).catch(() => undefined)) as { on?: unknown; config?: unknown } | undefined
@@ -538,6 +655,10 @@ export const register: Register = (on, options) => {
       if (await read($, isCampPending)) {
         await update($, isCampPending, () => false)
         camp($)
+      }
+      if (await read($, isClearPending)) {
+        await update($, isClearPending, () => false)
+        clearTrail($)
       }
     }
 
@@ -799,8 +920,34 @@ export const register: Register = (on, options) => {
   // deja el campamento pendiente y lo encarga al terminar su propio turno.
   on('command.run', { command: 'acampar' }, async $ => {
     await update($, isCampPending, () => true)
+    runSoon($)
 
     return { text: CAMP_TEXT }
+  })
+
+  // ─── Cerrar el día: limpiar, resumir o pasar el mapa ───────────────
+
+  on('command.run', { command: 'clear-trail' }, async $ => {
+    await update($, isClearPending, () => true)
+    runSoon($)
+
+    return { text: CLEAR_TEXT }
+  })
+
+  on('command.run', { command: 'trail-log' }, async ($, e) => {
+    const focus = e.args.trim()
+    await addEntry($, 'resumen', focus === '' ? 'Pide el resumen del día' : `Pide el resumen del día: ${focus}`)
+    submitSoon($, trailLogPrompt(focus, digest(await read($, journal))), 'pedir el resumen')
+
+    return { text: '✎ Junto a la fogata: Claude escribe el resumen de la sesión.' }
+  })
+
+  on('command.run', { command: 'pass-the-map' }, async ($, e) => {
+    const purpose = e.args.trim()
+    await addEntry($, 'relevo', purpose === '' ? 'Pasa el mapa a una sesión nueva' : `Pasa el mapa: ${purpose}`)
+    submitSoon($, passTheMapPrompt(purpose, digest(await read($, journal))), 'pasar el mapa')
+
+    return { text: '⇢ Pasando el mapa: Claude prepara el handoff y te dirá dónde quedó el archivo.' }
   })
 
   on('command.run', { command: 'sonido' }, async ($, e) => {

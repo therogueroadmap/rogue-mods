@@ -39,7 +39,7 @@ export type Weather = 'despejado' | 'nublado' | 'lluvia' | 'tormenta'
 export type Companion = { id: string; type: string }
 
 /** Qué cuenta una línea de la bitácora. */
-export type EntryKind = MarkKind | 'fase' | 'amanecer' | 'clima' | 'compañero' | 'acampada'
+export type EntryKind = MarkKind | 'fase' | 'amanecer' | 'clima' | 'compañero' | 'acampada' | 'limpieza' | 'resumen' | 'relevo'
 
 /** Una línea de la bitácora: cuándo, en qué punto del camino y qué pasó. */
 export type Entry = { at: number; percent: number; kind: EntryKind; label: string }
@@ -51,6 +51,7 @@ declare module 'claude-code' {
       pace: Pace
       isBandHidden: boolean
       isCampPending: boolean
+      isClearPending: boolean
       ledger: Ledger | null
       isDetailed: boolean
       journal: Entry[]

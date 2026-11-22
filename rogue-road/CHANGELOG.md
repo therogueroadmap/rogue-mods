@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-22
+
+### Added
+- `/clear-trail`: clears the context (`/clear`) as soon as the session is free, and logs it; the logbook keeps the road behind.
+- `/trail-log [focus]`: asks Claude for an end-of-session summary (goal, what was done with commits and PRs, decisions, what is pending or unverified, next steps), with the day's logbook attached.
+- `/pass-the-map [purpose]`: asks Claude for a handoff to a new session, with the `handoff` skill when it is installed and its rules otherwise (one markdown file in the system's temp directory, links instead of copies, suggested skills, no secrets, verified versus assumed), and the day's logbook attached.
+
+### Changed
+- `/acampar` now compacts as soon as the command ends, instead of waiting for the end of the next turn; it still falls back to that when the session is busy.
+
 ## [0.6.1] - 2026-11-22
 
 ### Changed

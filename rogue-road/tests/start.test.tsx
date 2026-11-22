@@ -1,4 +1,4 @@
-import { expect, test } from 'claude-code/testing'
+import { expect, mock, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
 import { sunAt, zoneAt } from '../hooks/scene'
@@ -317,4 +317,78 @@ test('los clics del fondo caen en la insignia, el viajero, el sol y el campament
   const sun = sunAt(40)
   expect(zoneAt(sun.x / 1600, (sun.y / 520) * 0.64, 40)).toBe('sol')
   expect(zoneAt(0.5, 0.9, 40)).toBe(null)
+})
+
+// ─── 0.7.0: cerrar el día ─────────────────────────────────────────────
+
+const run = (command: string, args = '') =>
+  ({ command, args, origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } }) as never
+
+test('/clear-trail encarga el /clear apenas queda libre la sesión', async ($, on) => {
+  const runs: string[] = []
+  const clock = mock.clock(on)
+  base(on)
+  on('ui.log', () => ({ value: undefined }))
+  on('command.run', { command: 'clear' }, () => { runs.push('clear'); return { text: 'cleared' } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  await $.command.run(run('clear-trail'))
+  expect(runs.length).toBe(0)
+  await clock.advance(500)
+  expect(runs).toEqual(['clear'])
+})
+
+test('/clear-trail deja la limpieza pendiente y encarga el /clear al terminar el turno', async ($, on) => {
+  const runs: string[] = []
+  base(on)
+  on('ui.log', () => ({ value: undefined }))
+  on('ui.toast', () => ({ value: undefined }))
+  on('command.run', { command: 'clear' }, () => { runs.push('clear'); return { text: 'cleared' } })
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const answer = await $.command.run(run('clear-trail'))
+  expect(answer.text?.startsWith('⌫')).toBe(true)
+  await $.turn.complete({ reason: 'answer', answer: 'listo', durationMs: 1, isAborted: false, turnId: 't1' } as never)
+  for (let i = 0; i < 20 && runs.length === 0; i++) {
+    await Promise.resolve()
+  }
+  expect(runs).toEqual(['clear'])
+})
+
+test('/trail-log pide el resumen con la bitácora del día', async ($, on) => {
+  const prompts: string[] = []
+  const clock = mock.clock(on)
+  base(on)
+  on('classic.PostToolUse', () => ({}))
+  on('prompt.submit', (_, e) => { prompts.push(e.text); return { text: e.text } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.classic.PostToolUse({ tool_name: 'Bash', tool_input: { command: 'git commit -m x' }, tool_response: { stdout: '[main abc1234] feat: el mapa' }, tool_use_id: 'u1' } as never)
+
+  const answer = await $.command.run(run('trail-log', 'lo pendiente'))
+  expect(answer.text?.startsWith('✎')).toBe(true)
+  expect(prompts.length).toBe(0)
+  await clock.advance(500)
+  expect(prompts[0]?.includes('/trail-log')).toBe(true)
+  expect(prompts[0]?.includes('Foco pedido: lo pendiente')).toBe(true)
+  expect(prompts[0]?.includes('commit: feat: el mapa')).toBe(true)
+})
+
+test('/pass-the-map pide el handoff con su propósito y las reglas de la skill', async ($, on) => {
+  const prompts: string[] = []
+  const clock = mock.clock(on)
+  base(on)
+  on('prompt.submit', (_, e) => { prompts.push(e.text); return { text: e.text } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const answer = await $.command.run(run('pass-the-map', 'prototipo del panel'))
+  expect(answer.text?.startsWith('⇢')).toBe(true)
+  await clock.advance(500)
+  expect(prompts[0]?.includes('skill `handoff`')).toBe(true)
+  expect(prompts[0]?.includes('Propósito de la próxima sesión: prototipo del panel')).toBe(true)
+  expect(prompts[0]?.includes('$TMPDIR')).toBe(true)
+
+  const pane = await $.ui.mount({ plugin: 'rogue-road', component: 'Pane', requestId: 'bitacora', surface: 'terminal', props: { title: 'Bitácora del viaje', isFocused: false, bodyColumns: 48, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } } as never)
+  expect((await pane.find({ type: 'Text', text: /Pasa el mapa: prototipo del panel/ })) !== undefined).toBe(true)
+  await pane.unmount()
 })
