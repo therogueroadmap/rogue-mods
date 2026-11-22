@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
+### Added
+- A badge in the top-left corner, always in view at a fixed size: the explorer in a circle of the current sky, a ring with the context used, the phase and whether it is exploring or waiting.
+- A size guard: if the scene ever grew past what the desktop app draws (131,072 characters), a lighter scene without stars, clouds, far mountains or milestones is drawn instead.
+
+### Changed
+- The road now keeps out of the reading column: it climbs the left slope in switchbacks, crosses the valley far away near the horizon and comes down the right slope to the camp. About a quarter of the journey passes behind the conversation, down from about half. The explorer is smaller in the distance and faces the way it walks.
+
+### Fixed
+- The theme is painted when the app attaches or the mod loads mid-session, and `/rogue-road` repaints it and reports the attached surfaces.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

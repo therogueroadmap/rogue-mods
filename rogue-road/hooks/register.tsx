@@ -322,7 +322,7 @@ export const register: Register = (on, options) => {
     const ph = phaseAt(phase)
     const alt = `${ph.name}: un explorador encapuchado ${now === 'explora' ? 'camina' : 'espera con su farol'} sobre un camino; ${percent ?? 0} % del contexto recorrido`
 
-    return <Svg source={scene({ percent, pace: now, mode })} alt={alt} isInteractive />
+    return <Svg source={scene({ percent, pace: now, mode, label: ph.name })} alt={alt} isInteractive />
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {

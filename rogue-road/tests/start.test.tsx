@@ -106,3 +106,21 @@ test('/acampar deja el campamento pendiente y encarga el /compact al terminar el
   expect(runs.length).toBe(1)
   expect(runs[0]?.includes('rumbo')).toBe(true)
 })
+
+test('el fondo lleva la insignia con la fase y el contexto, y no pasa del límite de la app', async ($, on) => {
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', () => usage(33))
+  on('theme.set', () => ({ value: { isDrawn: true, requestId: 't' } }))
+  on('ui.status', () => ({ value: undefined }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'rogue-road', component: 'Backdrop', surface: 'desktop', props: { scene: 'fase-2-auto', plugin: 'rogue-road', glass: false } } as never)
+  const svg = (await ui.find({ type: 'Svg' } as never)) as { props?: { source?: string } } | undefined
+  const source = svg?.props?.source ?? ''
+  expect(source.includes('class="badge"')).toBe(true)
+  expect(source.includes('>Mañana</text>')).toBe(true)
+  expect(source.includes('33 % · esperándote')).toBe(true)
+  expect(source.length <= 126000).toBe(true)
+  await ui.unmount()
+})

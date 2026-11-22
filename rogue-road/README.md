@@ -19,13 +19,14 @@ The explorer walks only while Claude works. When Claude needs you — the turn e
 
 What it adds:
 
-- An animated backdrop with the road, the sun, the explorer and the camp (desktop and mobile apps).
+- An animated backdrop with the road, the sun, the explorer and the camp (desktop and mobile apps). The road keeps to the sides of the window, out of the reading column.
+- A badge in the top-left corner, always in view: the explorer, a ring with the context used, the phase and its state.
 - Cream (light) and navy (dark) palettes from the brand, with an accent that follows the time of day.
 - Message styles: the person's messages in navy (cream at night), Claude's on paper.
 - A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road` with the details and `/acampar` to compact.
 
-Version 0.1.0.
+Version 0.2.0.
 
 ### Install
 

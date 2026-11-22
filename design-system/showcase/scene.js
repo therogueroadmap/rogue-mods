@@ -81,16 +81,35 @@ export const nightOf = (s     )      => ({
 const W = 1600
 const HORIZON = 330
 
-const hillTop = (u        )         => 395 - 75 * u + 14 * Math.sin(2.4 * Math.PI * u + 0.6)
-const roadY = (u        )         => hillTop(u) + 40 + 12 * Math.sin(3 * Math.PI * u)
-const roadX = (u        )         => 60 + 1480 * u
+// El camino evita la columna de lectura, donde la app pone la conversación:
+// sube en zigzag por la ladera izquierda, cruza el valle a lo lejos, cerca del
+// horizonte, y baja en zigzag por la derecha hasta el campamento. Así el
+// explorador pasa la mayor parte del viaje en los bordes de la ventana.
+const WAYPOINTS                     = [
+  [30, 492], [330, 470], [70, 440], [370, 410], [120, 384], [420, 362], [520, 350],
+  [680, 344], [800, 342], [920, 344],
+  [1080, 350], [1180, 362], [1480, 384], [1230, 410], [1530, 440], [1270, 470], [1570, 492],
+]
 
-const N = 64
-const ROAD                     = Array.from({ length: N }, (_, i) => {
-  const u = i / (N - 1)
+/** Suaviza las curvas cortando esquinas (Chaikin): sin bucles en las horquillas. */
+const chaikin = (pts                    , rounds        )                     => {
+  let out = pts
+  for (let r = 0; r < rounds; r++) {
+    const next                     = [out[0] ]
+    for (let i = 0; i < out.length - 1; i++) {
+      const [ax, ay] = out[i] 
+      const [bx, by] = out[i + 1] 
+      next.push([ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25], [ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75])
+    }
+    next.push(out[out.length - 1] )
+    out = next
+  }
 
-  return [roadX(u), roadY(u)]
-})
+  return out
+}
+
+const ROAD = chaikin(WAYPOINTS, 3)
+const N = ROAD.length
 
 const LENGTHS = ROAD.reduce          ((acc, p, i) => {
   const q = ROAD[i - 1]
@@ -100,8 +119,8 @@ const LENGTHS = ROAD.reduce          ((acc, p, i) => {
 }, [])
 const TOTAL = LENGTHS[LENGTHS.length - 1] ?? 1
 
-/** Punto del camino a una fracción `f` (0 a 1) de su largo. */
-export const roadPoint = (f        )                   => {
+/** Punto del camino a una fracción `f` (0 a 1) de su largo, y si ahí avanza hacia la izquierda. */
+export const roadStep = (f        )                                                => {
   const target = clamp(f, 0, 1) * TOTAL
   let i = 1
   while (i < N - 1 && (LENGTHS[i] ?? 0) < target) {
@@ -113,7 +132,27 @@ export const roadPoint = (f        )                   => {
   const lb = LENGTHS[i] ?? la
   const t = lb === la ? 0 : (target - la) / (lb - la)
 
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+  return { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, isLeftward: b[0] < a[0] - 0.01 }
+}
+
+/** Punto del camino a una fracción `f` (0 a 1) de su largo. */
+export const roadPoint = (f        )                   => {
+  const { x, y } = roadStep(f)
+
+  return [x, y]
+}
+
+/** Cuánto del viaje pasa por la columna central (30 % a 70 % del ancho). */
+export const centerShare = ()         => {
+  let inside = 0
+  for (let i = 1; i < N; i++) {
+    const [x] = ROAD[i] 
+    if (x > W * 0.3 && x < W * 0.7) {
+      inside += (LENGTHS[i] ?? 0) - (LENGTHS[i - 1] ?? 0)
+    }
+  }
+
+  return inside / TOTAL
 }
 
 const r1 = (n        )         => (Math.round(n * 10) / 10).toString()
@@ -128,11 +167,37 @@ const ridge = (from        , to        , step        , y                       ,
   return `M${from} ${base} L${pts.join(' L')} L${to} ${base} Z`
 }
 
+/** Lo más alto que pisa el camino cerca de cada columna, con margen. */
+const roadTop = (x        )         => {
+  let top = 486
+  for (const [px, py] of ROAD) {
+    if (Math.abs(px - x) <= 60) {
+      top = Math.min(top, py - 24)
+    }
+  }
+
+  return top
+}
+
+// La ladera cercana: el contorno del camino suavizado hacia afuera, para que
+// el camino siempre pise tierra y la ladera baje en pendiente suave.
+const GROUND_STEP = 20
+const GROUND_X = Array.from({ length: (3200 + 1600) / GROUND_STEP + 1 }, (_, i) => -1600 + i * GROUND_STEP)
+const GROUND_Y = (() => {
+  const raw = GROUND_X.map(roadTop)
+  let ys = raw
+  for (let pass = 0; pass < 14; pass++) {
+    ys = ys.map((y, i) => Math.min(raw[i] ?? y, ((ys[i - 1] ?? y) + 2 * y + (ys[i + 1] ?? y)) / 4))
+  }
+  // Un último suavizado, sin forzar: redondea los escalones que quedan sobre el camino.
+  return ys.map((y, i) => Math.min(raw[i] ?? y, y, ((ys[i - 1] ?? y) + y + (ys[i + 1] ?? y)) / 3 + 6))
+})()
+
 // Montañas lejanas: picos suaves sobre el horizonte, extendidas a los lados
 // para pantallas anchas.
 const FAR_D = ridge(-1600, 3200, 40, x => HORIZON + 10 - 70 * Math.abs(Math.sin(x / 260)) - 30 * Math.abs(Math.sin(x / 97 + 1.3)), 1200)
 const MID_D = ridge(-1600, 3200, 40, x => HORIZON + 34 - 34 * Math.abs(Math.sin(x / 180 + 0.7)) - 12 * Math.sin(x / 61), 1200)
-const NEAR_D = ridge(-1600, 3200, 20, x => hillTop(clamp((x - 60) / 1480, -0.2, 1.2)), 1600)
+const NEAR_D = `M-1600 1600 L${GROUND_X.map((x, i) => `${x} ${r1(GROUND_Y[i] ?? 486)}`).join(' L')} L3200 1600 Z`
 
 /** Posición del sol: sale por la izquierda, culmina al mediodía y se pone por la derecha pasado el 90 %. */
 export const sunAt = (percent        )                           => {
@@ -175,9 +240,47 @@ const STARS = [
   [340, 210], [780, 190], [1200, 230], [60, 200],
 ]
 
-                                                                           
+                          
+                        
+            
+            
+                                                                         
+                
+ 
 
-export const scene = ({ percent, pace, mode }            )         => {
+/** Lo más largo que puede ser el SVG de un fondo: la app de escritorio no dibuja nada pasado 131 072 caracteres. */
+export const MAX_SVG = 126_000
+
+const escape = (text        )         => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/**
+ * La escena completa. Si alguna vez pasara del límite de la app, se dibuja una
+ * versión liviana, sin estrellas, nubes, montañas lejanas ni hitos.
+ */
+export const scene = (input            )         => {
+  const full = compose(input, false)
+
+  return full.length <= MAX_SVG ? full : compose(input, true)
+}
+
+/** La insignia de la esquina: el explorador en un círculo de cielo, el anillo de contexto y la fase. Siempre visible, en píxeles fijos. */
+const badge = (p        , pace      , label        )         => {
+  const state = pace === 'explora' ? 'explorando' : 'esperándote'
+  const title = escape(label === '' ? `${Math.round(p)} %` : label)
+  const detail = escape(label === '' ? state : `${Math.round(p)} % · ${state}`)
+
+  return `<svg x="20" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
+<rect class="badge-box" x="0" y="0" width="236" height="84" rx="42"/>
+<circle cx="42" cy="42" r="30" fill="url(#rrSky)"/>
+<g clip-path="url(#rrBadgeClip)"><g class="${pace}" transform="translate(40 70) scale(0.64)">${ROGUE}</g></g>
+<circle class="ring-track" cx="42" cy="42" r="33"/>
+<circle class="ring" cx="42" cy="42" r="33" pathLength="100" stroke-dasharray="${r1(clamp(p, 0, 100))} 100" transform="rotate(-90 42 42)"/>
+<text class="badge-title" x="88" y="38">${title}</text>
+<text class="badge-detail" x="88" y="58">${detail}</text>
+</svg>`
+}
+
+const compose = ({ percent, pace, mode, label = '' }            , lite         )         => {
   const p = percent ?? 0
   const day = skyAt(p)
   const night = nightOf(day)
@@ -192,7 +295,11 @@ export const scene = ({ percent, pace, mode }            )         => {
         : `svg { ${light} } @media (prefers-color-scheme: dark) { svg { ${dark} } }`
 
   const f = 0.03 + 0.94 * (Math.min(p, 100) / 100)
-  const [rx, ry] = roadPoint(f)
+  const step = roadStep(f)
+  const [rx, ry] = [step.x, step.y]
+  // Más pequeño a lo lejos, cerca del horizonte; mira hacia donde avanza.
+  const depth = 0.8 + clamp((ry - 343) / (470 - 343), 0, 1) * 0.55
+  const facing = step.isLeftward ? -depth : depth
   const sun = sunAt(p)
   const stars = clamp((p - 78) / 18, 0, 1)
   const warm = clamp(Math.abs(p - 45) / 45, 0, 1)
@@ -252,6 +359,12 @@ ${palette}
 .espera .bubble { opacity: 1 }
 .espera .dot { animation: rr-dot 2.4s ease-in-out infinite } .espera .d2 { animation-delay: 0.4s } .espera .d3 { animation-delay: 0.8s }
 .espera .lamp-glow { opacity: 0.5; animation: rr-breathe 4s ease-in-out infinite }
+.badge-box { fill: ${BRAND.navy}; opacity: 0.82 }
+.ring-track { fill: none; stroke: ${BRAND.cream}; stroke-opacity: 0.22; stroke-width: 5 }
+.ring { fill: none; stroke: ${BRAND.orange}; stroke-width: 5; stroke-linecap: round }
+.badge-title { fill: ${BRAND.cream}; font: 600 18px Outfit, ui-sans-serif, system-ui, sans-serif }
+.badge-detail { fill: ${BRAND.cream}; fill-opacity: 0.82; font: 400 13px Outfit, ui-sans-serif, system-ui, sans-serif }
+.badge .bubble, .badge .dust, .badge .lamp-glow { display: none }
 </style>
 <defs>
 <linearGradient id="rrSky" x1="0" y1="0" x2="0" y2="1">
@@ -260,13 +373,14 @@ ${palette}
 <linearGradient id="rrMist" x1="0" y1="0" x2="0" y2="1">
 <stop offset="0" class="s-ground" stop-opacity="0"/><stop offset="0.4" class="s-ground" stop-opacity="0.86"/><stop offset="1" class="s-ground" stop-opacity="1"/>
 </linearGradient>
+<clipPath id="rrBadgeClip"><circle cx="42" cy="42" r="30"/></clipPath>
 <radialGradient id="rrSun"><stop offset="0.3" class="sun-glow" stop-opacity="${glow.toFixed(2)}"/><stop offset="1" class="sun-glow" stop-opacity="0"/></radialGradient>
 </defs>
 <!-- cielo -->
 <rect width="100%" height="100%" fill="url(#rrSky)"/>
 <svg width="100%" height="64%" viewBox="0 0 ${W} 520" preserveAspectRatio="xMidYMax meet" overflow="visible">
 <!-- estrellas y luna al anochecer -->
-<g opacity="${stars.toFixed(2)}">
+<g opacity="${stars.toFixed(2)}"${lite ? ' display="none"' : ''}>
 ${STARS.map(([x, y], i) => `<circle class="${i % 3 === 0 ? 'star tw' : 'star'}" cx="${x}" cy="${y}" r="${i % 4 === 0 ? 1.8 : 1.2}"${i % 3 === 0 ? ` style="animation-delay: ${i % 5}s"` : ''}/>`).join('')}
 <path class="moon" d="M560 62 A34 34 0 1 0 596 110 A28 28 0 1 1 560 62 Z"/>
 </g>
@@ -274,26 +388,28 @@ ${STARS.map(([x, y], i) => `<circle class="${i % 3 === 0 ? 'star tw' : 'star'}" 
 <circle cx="${r1(sun.x)}" cy="${r1(sun.y)}" r="130" fill="url(#rrSun)"/>
 <circle class="sun" cx="${r1(sun.x)}" cy="${r1(sun.y)}" r="40"/>
 <!-- nubes -->
-<g class="clouds" opacity="${(1 - stars).toFixed(2)}">
+<g class="clouds" opacity="${(1 - stars).toFixed(2)}"${lite ? ' display="none"' : ''}>
 <path class="cloud" d="M200 150 h140 a22 22 0 0 0 -30 -26 a34 34 0 0 0 -62 -8 a24 24 0 0 0 -48 34 Z"/>
 <path class="cloud" d="M980 96 h180 a26 26 0 0 0 -36 -30 a40 40 0 0 0 -74 -10 a28 28 0 0 0 -70 40 Z"/>
 </g>
 <!-- montañas -->
-<path class="far" d="${FAR_D}"/>
+${lite ? '' : `<path class="far" d="${FAR_D}"/>`}
 <path class="midr" d="${MID_D}" opacity="0.9"/>
 <path class="near" d="${NEAR_D}"/>
 <!-- el camino: punteado por delante, naranja lo recorrido -->
 <path class="road-ahead" d="${ROAD_D}"/>
 <path class="road-done" d="${ROAD_D}" pathLength="100" stroke-dasharray="${r1(f * 100)} 200"/>
-${milestones}
+${lite ? '' : milestones}
 <!-- el campamento al final del camino -->
 <g transform="translate(${r1(cx)} ${r1(cy)})"><path class="tent" d="M-16 0 L0 -22 L16 0 Z"/><path class="tent-door" d="M-4 0 L0 -8 L4 0 Z"/><line class="pole thin" x1="0" y1="-22" x2="0" y2="-34"/><path class="flag" d="M0 -34 L10 -31 L0 -28 Z"/></g>
 <!-- el explorador -->
-<g class="${pace}" transform="translate(${r1(rx)} ${r1(ry)}) scale(1.3)">
+<g class="${pace}" transform="translate(${r1(rx)} ${r1(ry)}) scale(${facing.toFixed(2)} ${depth.toFixed(2)})">
 ${ROGUE}
 </g>
 </svg>
 <!-- bruma: el paisaje se funde con la página bajo la conversación -->
-<rect y="50%" width="100%" height="50%" fill="url(#rrMist)"/>
+<rect y="58%" width="100%" height="42%" fill="url(#rrMist)"/>
+<!-- insignia: siempre a la vista en la esquina -->
+${badge(p, pace, label)}
 </svg>`
 }
