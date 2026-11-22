@@ -1,6 +1,6 @@
 {
   "name": "sharingan",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Theme for Claude: a Sharingan that gains tomoe as the context window fills up, until the Mangekyō marks the genjutsu of a degraded context. Kai compacts. Dark and light modes.",
   "author": {
     "name": "José R. Pérez Sandó",

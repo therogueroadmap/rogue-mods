@@ -55,3 +55,25 @@ test('el modo claro pinta papel washi y fija el esquema claro', { options: { mod
   expect(svg?.props?.source?.includes('prefers-color-scheme')).toBe(false)
   await ui.unmount()
 })
+
+test('/kai deja Kai pendiente y encarga el /compact al terminar el turno', async ($, on) => {
+  const runs: string[] = []
+  on('ui.log', () => ({ value: undefined }))
+  on('ui.toast', () => ({ value: undefined }))
+  on('command.run', { command: 'compact' }, (_, e) => {
+    runs.push(e.args)
+    return { text: 'compacted' }
+  })
+  on('turn.complete', () => ({ text: '' }))
+
+  const answer = await $.command.run({ command: 'kai', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as never)
+  expect(answer.text?.startsWith('解 Kai')).toBe(true)
+  expect(runs.length).toBe(0)
+
+  await $.turn.complete({ reason: 'answer', answer: 'listo', durationMs: 1, isAborted: false, turnId: 't1' } as never)
+  for (let i = 0; i < 20 && runs.length === 0; i++) {
+    await Promise.resolve()
+  }
+  expect(runs.length).toBe(1)
+  expect(runs[0]?.includes('verificado')).toBe(true)
+})

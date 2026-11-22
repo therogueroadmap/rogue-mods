@@ -268,15 +268,19 @@ async function applyStage($: EngineInterface, i: number, mode: Mode, percent: nu
   $.ui.status(`写輪眼 ${s.name}${percent === null ? '' : ` · ${percent} %`}`)
 }
 
-async function kai($: EngineInterface): Promise<string> {
-  try {
-    const { skip } = await $.session.compact({ instructions: 'Conserva solo lo verificado; descarta suposiciones que no se confirmaron.' })
+const KAI_FOCUS = 'Conserva solo lo verificado; descarta suposiciones que no se confirmaron.'
 
-    return skip ? 'Kai no se aplicó: otro plugin detuvo la compactación.' : '解 Kai: la ilusión se rompe. El contexto se compactó.'
-  } catch {
-    return 'Kai no puede compactar mientras Claude responde. Inténtalo cuando termine el turno.'
-  }
+// Kai encarga el /compact de Claude Code, que queda en cola y corre en cuanto
+// la sesión está libre. No se espera su resultado: quien lo pide (un botón, el
+// fin de un turno) todavía tiene la sesión ocupada.
+function kai($: EngineInterface): void {
+  $.command.run({ command: 'compact', args: KAI_FOCUS }).catch((error: unknown) => {
+    $.ui.log(`sharingan: Kai no pudo compactar: ${String(error)}`)
+    $.ui.toast('Kai no pudo compactar. Usa /compact directamente.')
+  })
 }
+
+const KAI_TEXT = '解 Kai: rompiendo la ilusión. La conversación se compacta en cuanto Claude queda libre.'
 
 const marks = (s: Stage): string => (s.isMangekyo ? '◈' : '●'.repeat(s.tomoe) + '○'.repeat(3 - s.tomoe))
 
@@ -284,6 +288,7 @@ const marks = (s: Stage): string => (s.isMangekyo ? '◈' : '●'.repeat(s.tomoe
 
 const eye = atom({ plugin: 'sharingan', key: 'eye' } as const, { stage: 0, percent: null } as Eye)
 const isBandHidden = atom({ plugin: 'sharingan', key: 'isBandHidden' } as const, false)
+const isKaiPending = atom({ plugin: 'sharingan', key: 'isKaiPending' } as const, false)
 
 export const register: Register = (on, options) => {
   const mode = modeOf(options.modo)
@@ -363,8 +368,9 @@ export const register: Register = (on, options) => {
           <Button
             key="kai"
             label="解 Kai"
-            onPress={async () => {
-              $.ui.toast(await kai($))
+            onPress={() => {
+              kai($)
+              $.ui.toast(KAI_TEXT)
             }}
           />
         )}
@@ -393,5 +399,21 @@ export const register: Register = (on, options) => {
     }
   })
 
-  on('command.run', { command: 'kai' }, async $ => ({ text: await kai($) }))
+  // Un comando no puede encargar otro comando mientras ocupa la sesión: /kai
+  // deja Kai pendiente y lo encarga al terminar su propio turno.
+  on('command.run', { command: 'kai' }, async $ => {
+    await update($, isKaiPending, () => true)
+
+    return { text: KAI_TEXT }
+  })
+
+  on('turn.complete', async ($, e, next) => {
+    const result = await next(e)
+    if (await read($, isKaiPending)) {
+      await update($, isKaiPending, () => false)
+      kai($)
+    }
+
+    return result
+  })
 }

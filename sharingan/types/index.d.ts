@@ -7,6 +7,6 @@ export type Eye = {
 
 declare module 'claude-code' {
   interface PluginState {
-    sharingan: { eye: Eye; isBandHidden: boolean }
+    sharingan: { eye: Eye; isBandHidden: boolean; isKaiPending: boolean }
   }
 }

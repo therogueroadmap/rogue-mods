@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-22
+
+### Fixed
+- `/kai` always answered that Claude was busy: a command cannot compact while it holds the session. It now leaves Kai pending and queues Claude Code's own `/compact` when the command's turn ends. The `解 Kai` button queues it right away.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added
