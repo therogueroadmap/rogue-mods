@@ -244,7 +244,7 @@ const STARS = [
 ]
 
 // ─── La viñeta del explorador ────────────────────────────────────────
-// El explorador vive en la esquina inferior izquierda, fuera de la columna de
+// El explorador vive en la esquina inferior derecha, fuera de la columna de
 // lectura. Camina en el lugar y el mundo se desplaza detrás de él (parallax):
 // pinos lejanos lentos, piedras y matas cercanas rápidas, el sendero bajo los
 // pies. En espera todo se detiene y él aguarda con el farol encendido.
@@ -287,7 +287,9 @@ const nearThings = (): string => {
 const FAR_PINES = farPines()
 const NEAR_THINGS = nearThings()
 
-const vignette = (pace: Pace, shadowLen: number, shadowDir: number, shadowAlpha: number, fireflies: number): string => `<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMax meet" overflow="visible">
+const vignette = (pace: Pace, shadowLen: number, shadowDir: number, shadowAlpha: number, fireflies: number): string => `<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMaxYMax meet" overflow="visible">
+<!-- dibujada para el borde izquierdo y reflejada al derecho: la barra lateral de la app tapa la izquierda -->
+<g transform="translate(1600 0) scale(-1 1)">
 <g class="vignette ${pace}" mask="url(#rrVgMask)">
 <path class="vg-ground" d="M-60 900V${VG_GROUND - 4}Q140 ${VG_GROUND - 22} 520 ${VG_GROUND}V900Z"/>
 <g class="vg-scroll vg-far">${`<path class="vg-pines" d="${FAR_PINES}"/>`}</g>
@@ -296,6 +298,7 @@ const vignette = (pace: Pace, shadowLen: number, shadowDir: number, shadowAlpha:
 <ellipse class="vg-shadow" cx="${r1(150 + (shadowDir * shadowLen) / 2)}" cy="${VG_GROUND + 2}" rx="${r1(shadowLen / 2 + 14)}" ry="6" opacity="${shadowAlpha.toFixed(2)}"/>
 <g transform="translate(150 ${VG_GROUND}) scale(2.1)"><g class="${pace}">${ROGUE}</g></g>
 <g opacity="${fireflies.toFixed(2)}">${[[60, 760], [250, 720], [320, 800], [110, 690], [380, 740]].map(([x, y], i) => `<circle class="firefly" cx="${x}" cy="${y}" r="2.6" style="animation-delay: -${i * 1.7}s"/>`).join('')}</g>
+</g>
 </g>
 </svg>`
 
@@ -322,13 +325,16 @@ export const scene = (input: SceneInput): string => {
   return full.length <= MAX_SVG ? full : compose(input, true)
 }
 
-/** La insignia de la esquina: el explorador en un círculo de cielo, el anillo de contexto y la fase. Siempre visible, en píxeles fijos. */
+/** La insignia de la esquina superior derecha: el explorador en un círculo de cielo, el anillo de contexto y la fase. Siempre visible, en píxeles fijos. */
 const badge = (p: number, pace: Pace, label: string): string => {
   const state = pace === 'explora' ? 'explorando' : 'esperándote'
   const title = escape(label === '' ? `${Math.round(p)} %` : label)
   const detail = escape(label === '' ? state : `${Math.round(p)} % · ${state}`)
 
-  return `<svg x="20" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
+  // Alineada a la derecha y a tamaño fijo: el viewBox mide la insignia más
+  // 20 px de margen, y meet con xMax la pega al borde derecho sin escalarla.
+  return `<svg width="100%" height="104" viewBox="0 0 256 104" preserveAspectRatio="xMaxYMin meet">
+<svg x="0" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
 <rect class="badge-box" x="0" y="0" width="236" height="84" rx="42"/>
 <circle cx="42" cy="42" r="30" fill="url(#rrSky)"/>
 <g clip-path="url(#rrBadgeClip)"><g class="${pace}" transform="translate(40 70) scale(0.64)">${ROGUE}</g></g>
@@ -336,6 +342,7 @@ const badge = (p: number, pace: Pace, label: string): string => {
 <circle class="ring" cx="42" cy="42" r="33" pathLength="100" stroke-dasharray="${r1(clamp(p, 0, 100))} 100" transform="rotate(-90 42 42)"/>
 <text class="badge-title" x="88" y="38">${title}</text>
 <text class="badge-detail" x="88" y="58">${detail}</text>
+</svg>
 </svg>`
 }
 
@@ -533,7 +540,7 @@ ${lite ? '' : milestones}
 <!-- bruma: el paisaje se funde con la página bajo la conversación -->
 <rect y="58%" width="100%" height="42%" fill="url(#rrMist)"/>
 <!-- el explorador, en la viñeta del costado -->
-${vignette(pace, shadowLen, shadowDir, shadowAlpha, lite ? 0 : fireflies)}
+${vignette(pace, shadowLen, -shadowDir, shadowAlpha, lite ? 0 : fireflies)}
 <!-- insignia: siempre a la vista en la esquina -->
 ${badge(p, pace, label)}
 </svg>`

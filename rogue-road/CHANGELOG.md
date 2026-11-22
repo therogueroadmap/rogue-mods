@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-22
+
+### Changed
+- The explorer's vignette and the context badge moved to the right side of the window: the app's sidebar with the conversation list usually covers the left. The vignette is mirrored, so the explorer now faces the conversation.
+
 ## [0.3.0] - 2026-11-22
 
 ### Changed

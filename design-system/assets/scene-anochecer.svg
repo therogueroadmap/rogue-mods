@@ -148,13 +148,15 @@ svg { --top: #182549; --mid: #684369; --horizon: #B65648; --far: #302C4D; --near
 <!-- bruma: el paisaje se funde con la página bajo la conversación -->
 <rect y="58%" width="100%" height="42%" fill="url(#rrMist)"/>
 <!-- el explorador, en la viñeta del costado -->
-<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMax meet" overflow="visible">
+<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMaxYMax meet" overflow="visible">
+<!-- dibujada para el borde izquierdo y reflejada al derecho: la barra lateral de la app tapa la izquierda -->
+<g transform="translate(1600 0) scale(-1 1)">
 <g class="vignette espera" mask="url(#rrVgMask)">
 <path class="vg-ground" d="M-60 900V842Q140 824 520 846V900Z"/>
 <g class="vg-scroll vg-far"><path class="vg-pines" d="M-0.8800000000000008 812L10 778L20.880000000000003 812ZM38.96 812L46 790L53.04 812ZM107.2 812L120 772L132.8 812ZM141.04 812L150 784L158.96 812ZM226.4 812L236 782L245.6 812ZM285.28 812L300 766L314.72 812ZM321.68 812L330 786L338.32 812ZM361.12 812L372 778L382.88 812ZM399.12 812L410 778L420.88 812ZM438.96 812L446 790L453.04 812ZM507.2 812L520 772L532.8 812ZM541.04 812L550 784L558.96 812ZM626.4 812L636 782L645.6 812ZM685.28 812L700 766L714.72 812ZM721.68 812L730 786L738.32 812ZM761.12 812L772 778L782.88 812Z"/></g>
 <path class="vg-path" d="M-60 852H460"/>
 <g class="vg-scroll vg-near"><path class="vg-stone" d="M31 860a9 5.3999999999999995 0 0 1 18 0ZM204 860a6 3.5999999999999996 0 0 1 12 0ZM318 860a12 7.199999999999999 0 0 1 24 0ZM431 860a9 5.3999999999999995 0 0 1 18 0ZM604 860a6 3.5999999999999996 0 0 1 12 0ZM718 860a12 7.199999999999999 0 0 1 24 0Z"/><path class="vg-grass" d="M90 858l3 -11M94 858l1 -8M97 858l-2 -9M150 858l3 -11M154 858l1 -8M157 858l-2 -9M260 858l3 -11M264 858l1 -8M267 858l-2 -9M300 858l3 -11M304 858l1 -8M307 858l-2 -9M380 858l3 -11M384 858l1 -8M387 858l-2 -9M490 858l3 -11M494 858l1 -8M497 858l-2 -9M550 858l3 -11M554 858l1 -8M557 858l-2 -9M660 858l3 -11M664 858l1 -8M667 858l-2 -9M700 858l3 -11M704 858l1 -8M707 858l-2 -9M780 858l3 -11M784 858l1 -8M787 858l-2 -9"/><g class="post"><rect x="170" y="806" width="4" height="52" rx="1"/><path d="M168 808h30l7 6l-7 6h-30Z"/></g><g class="post"><rect x="570" y="806" width="4" height="52" rx="1"/><path d="M568 808h30l7 6l-7 6h-30Z"/></g></g>
-<ellipse class="vg-shadow" cx="63" cy="848" rx="101" ry="6" opacity="0.16"/>
+<ellipse class="vg-shadow" cx="237" cy="848" rx="101" ry="6" opacity="0.16"/>
 <g transform="translate(150 846) scale(2.1)"><g class="espera"><g class="rogue-body">
 <path class="cape" d="M-9 -44 C-18 -34 -25 -20 -29 -7 L-12 -9 Z"/>
 <path class="ink" d="M-1 -66 C-11 -61 -14 -51 -12 -42 L12 -42 C12 -53 7 -61 -1 -66 Z"/>
@@ -171,9 +173,11 @@ svg { --top: #182549; --mid: #684369; --horizon: #B65648; --far: #302C4D; --near
 <circle class="dot d1" cx="-9" cy="0" r="2.6"/><circle class="dot d2" cx="0" cy="0" r="2.6"/><circle class="dot d3" cx="9" cy="0" r="2.6"/></g></g></g>
 <g opacity="0.50"><circle class="firefly" cx="60" cy="760" r="2.6" style="animation-delay: -0s"/><circle class="firefly" cx="250" cy="720" r="2.6" style="animation-delay: -1.7s"/><circle class="firefly" cx="320" cy="800" r="2.6" style="animation-delay: -3.4s"/><circle class="firefly" cx="110" cy="690" r="2.6" style="animation-delay: -5.1s"/><circle class="firefly" cx="380" cy="740" r="2.6" style="animation-delay: -6.8s"/></g>
 </g>
+</g>
 </svg>
 <!-- insignia: siempre a la vista en la esquina -->
-<svg x="20" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
+<svg width="100%" height="104" viewBox="0 0 256 104" preserveAspectRatio="xMaxYMin meet">
+<svg x="0" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
 <rect class="badge-box" x="0" y="0" width="236" height="84" rx="42"/>
 <circle cx="42" cy="42" r="30" fill="url(#rrSky)"/>
 <g clip-path="url(#rrBadgeClip)"><g class="espera" transform="translate(40 70) scale(0.64)"><g class="rogue-body">
@@ -194,5 +198,6 @@ svg { --top: #182549; --mid: #684369; --horizon: #B65648; --far: #302C4D; --near
 <circle class="ring" cx="42" cy="42" r="33" pathLength="100" stroke-dasharray="96 100" transform="rotate(-90 42 42)"/>
 <text class="badge-title" x="88" y="38">96 %</text>
 <text class="badge-detail" x="88" y="58">esperándote</text>
+</svg>
 </svg>
 </svg>

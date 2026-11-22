@@ -6,7 +6,7 @@
 
 A theme for Claude's interface built on The Rogue Roadmap brand. A hooded explorer — the rogue — walks a winding road. The road is the context window: the explorer sets out at **dawn** with an empty context, and every answer pushes the sun west until **dusk** marks a context that is nearly full. **Acampar** (camp) compacts the conversation, and a new day begins.
 
-The explorer lives in a vignette in the bottom-left corner, beside the conversation. While Claude works it walks in place and the world scrolls behind it. When Claude needs you — the turn ended, a permission prompt, a question, a plan to approve — everything stops: it lights its lantern and waits with a bubble over its head. On the landscape behind, an orange marker shows how far along the road it is.
+The explorer lives in a vignette in the bottom-right corner, beside the conversation and clear of the app's sidebar. While Claude works it walks in place and the world scrolls behind it. When Claude needs you — the turn ended, a permission prompt, a question, a plan to approve — everything stops: it lights its lantern and waits with a bubble over its head. On the landscape behind, an orange marker shows how far along the road it is.
 
 The day also changes the light: the mountains glow on the sun's side, the explorer's shadow is long at dawn and dusk, haze thickens through the day, birds cross the morning, fireflies come out at dusk and a campfire burns at the camp at nightfall.
 
@@ -22,13 +22,13 @@ The day also changes the light: the mountains glow on the sun's side, the explor
 What it adds:
 
 - An animated backdrop with the road, the sun, the explorer and the camp (desktop and mobile apps). The road keeps to the sides of the window, out of the reading column.
-- A badge in the top-left corner, always in view: the explorer, a ring with the context used, the phase and its state.
+- A badge in the top-right corner, always in view: the explorer, a ring with the context used, the phase and its state.
 - Cream (light) and navy (dark) palettes from the brand, with an accent that follows the time of day.
 - Message styles: the person's messages in navy (cream at night), Claude's on paper.
 - A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road` with the details and `/acampar` to compact.
 
-Version 0.3.0.
+Version 0.3.1.
 
 ### Install
 
@@ -63,7 +63,7 @@ Tema para la interfaz de Claude con el brand de The Rogue Roadmap. Un explorador
 
 El explorador solo camina mientras Claude trabaja. Cuando Claude te necesita (terminó el turno, pide un permiso, hace una pregunta o espera que apruebes un plan) se detiene, enciende su farol y espera con un globo sobre la cabeza.
 
-El explorador vive en una viñeta en la esquina inferior izquierda: camina en el lugar con el mundo desplazándose detrás mientras Claude trabaja, y se detiene a esperarte cuando Claude te necesita. La luz, las sombras, la bruma, los pájaros, las luciérnagas y la fogata siguen la hora del día.
+El explorador vive en una viñeta en la esquina inferior derecha, lejos de la barra lateral de la app: camina en el lugar con el mundo desplazándose detrás mientras Claude trabaja, y se detiene a esperarte cuando Claude te necesita. La luz, las sombras, la bruma, los pájaros, las luciérnagas y la fogata siguen la hora del día.
 
 Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y navy (oscuro) del brand con un acento que sigue la hora del día, estilos de mensaje, una banda sobre el prompt con un camino en miniatura que también funciona en la terminal, una entrada en la línea de estado, avisos al cambiar de fase y los comandos `/rogue-road` y `/acampar`. La instalación, los ajustes y los requisitos están en la sección en inglés.
 
