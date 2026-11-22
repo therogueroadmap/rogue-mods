@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-22
+
+### Fixed
+- The badge in the top-left corner no longer hides under the desktop app's title bar: it now sits 64 px from the top instead of 20.
+
 ## [0.5.0] - 2026-11-22
 
 ### Added

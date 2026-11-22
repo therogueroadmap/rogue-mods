@@ -397,13 +397,13 @@ export const scene = (input: SceneInput): string => {
   return full.length <= MAX_SVG ? full : compose(input, true)
 }
 
-/** La insignia de la esquina: el explorador en un círculo de cielo, el anillo de contexto y la fase. Siempre visible, en píxeles fijos. */
+/** La insignia de la esquina: el explorador en un círculo de cielo, el anillo de contexto y la fase. Siempre visible, en píxeles fijos, bajo la barra de título de la app (unos 48 px). */
 const badge = (p: number, pace: Pace, label: string): string => {
   const state = pace === 'explora' ? 'explorando' : 'esperándote'
   const title = escape(label === '' ? `${Math.round(p)} %` : label)
   const detail = escape(label === '' ? state : `${Math.round(p)} % · ${state}`)
 
-  return `<svg x="20" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
+  return `<svg x="20" y="64" width="236" height="84" viewBox="0 0 236 84" class="badge">
 <rect class="badge-box" x="0" y="0" width="236" height="84" rx="42"/>
 <circle cx="42" cy="42" r="30" fill="url(#rrSky)"/>
 <g clip-path="url(#rrBadgeClip)"><g class="${pace}" transform="translate(40 106) scale(0.76)">${ROGUE}</g></g>
