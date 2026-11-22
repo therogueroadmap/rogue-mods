@@ -864,11 +864,17 @@ export const register: Register = (on, options) => {
           <Box flexDirection="row" width="100%" height={1}>
             {segments.map(({ row, cells }) =>
               row.kind === 'free' ? (
-                // El espacio por llenar: un riel rayado, como el ░ de /context.
+                // El espacio por llenar: un riel rayado, una franja gris de cada
+                // tres y el resto vacío, como el ░ de /context. Solo las claves
+                // de color de la banda (subtle, inactive…) pintan un fondo aquí.
                 <Box key={row.name} flexGrow={cells} flexShrink={1} height={1} flexDirection="row">
-                  {Array.from({ length: Math.max(4, Math.round((cells / 1000) * 64)) }, (_, k) => (
-                    <Box key={`libre-${k}`} flexGrow={1} height={1} backgroundColor={k % 2 === 0 ? 'border-strong' : 'border'} />
-                  ))}
+                  {Array.from({ length: Math.max(6, Math.round((cells / 1000) * 120)) }, (_, k) =>
+                    k % 3 === 0 ? (
+                      <Box key={`libre-${k}`} flexGrow={1} height={1} backgroundColor="subtle" />
+                    ) : (
+                      <Box key={`libre-${k}`} flexGrow={1} height={1} />
+                    ),
+                  )}
                 </Box>
               ) : (
                 <Box
@@ -876,7 +882,7 @@ export const register: Register = (on, options) => {
                   flexGrow={cells}
                   flexShrink={1}
                   height={1}
-                  backgroundColor={row.kind === 'buffer' ? 'text-muted' : row.color}
+                  backgroundColor={row.kind === 'buffer' ? 'subtle' : row.color}
                 />
               ),
             )}

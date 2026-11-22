@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-11-22
+
+### Fixed
+- The autocompaction buffer and the free space vanished from the desktop context bar: the band paints a background only from its own colour keys, and `border`, `border-strong` and `text-muted` are not among them. The buffer is a solid grey block (`subtle`) again, and the free space a lighter striped track, one grey stripe in three.
+
 ## [0.10.2] - 2026-11-22
 
 ### Fixed
