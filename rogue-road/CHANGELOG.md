@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-22
+
+### Changed
+- `/acampar` is now `/make-camp`, in English like `/clear-trail`, `/trail-log` and `/pass-the-map`. The `⛺ Acampar` buttons and the click on the camp still compact.
+
 ## [0.7.0] - 2026-11-22
 
 ### Added

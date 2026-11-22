@@ -87,7 +87,7 @@ test('el modo oscuro fija el esquema y pinta el navy del brand', { options: { mo
   await ui.unmount()
 })
 
-test('/acampar deja el campamento pendiente y encarga el /compact al terminar el turno', async ($, on) => {
+test('/make-camp deja el campamento pendiente y encarga el /compact al terminar el turno', async ($, on) => {
   const runs: string[] = []
   on('ui.log', () => ({ value: undefined }))
   on('ui.toast', () => ({ value: undefined }))
@@ -98,7 +98,7 @@ test('/acampar deja el campamento pendiente y encarga el /compact al terminar el
   })
   on('turn.complete', () => ({ text: '' }))
 
-  const answer = await $.command.run({ command: 'acampar', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as never)
+  const answer = await $.command.run({ command: 'make-camp', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as never)
   expect(answer.text?.startsWith('⛺')).toBe(true)
   expect(runs.length).toBe(0)
 

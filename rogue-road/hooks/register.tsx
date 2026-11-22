@@ -9,7 +9,7 @@ import { soundOf } from './sound'
 
 // ─── Las seis fases del día ──────────────────────────────────────────
 // La exploración empieza al alba con el contexto vacío; cada respuesta
-// empuja el sol hacia el oeste. Al anochecer conviene acampar (/acampar
+// empuja el sol hacia el oeste. Al anochecer conviene acampar (/make-camp
 // compacta la conversación) para que vuelva a amanecer.
 
 type Phase = {
@@ -26,8 +26,8 @@ const PHASES: Phase[] = [
   { name: 'Mañana', icon: '☀', from: 15, accent: '#F7792C', tip: 'Buen ritmo. El explorador avanza con el sol a la espalda.' },
   { name: 'Mediodía', icon: '☀', from: 35, accent: '#F7792C', tip: 'Medio camino recorrido. La conversación tiene mucho contexto útil.' },
   { name: 'Tarde', icon: '☀', from: 55, accent: '#F2672E', tip: 'Las sombras se alargan: lo más antiguo de la conversación empieza a pesar.' },
-  { name: 'Atardecer', icon: '◒', from: 75, accent: '#EC553F', tip: 'Queda poca luz. Planea dónde acampar: /acampar compacta y trae un nuevo amanecer.' },
-  { name: 'Anochecer', icon: '☾', from: 90, accent: '#8C7BEA', tip: 'Caminar de noche es arriesgado: el contexto está casi lleno. Acampa con /acampar.' },
+  { name: 'Atardecer', icon: '◒', from: 75, accent: '#EC553F', tip: 'Queda poca luz. Planea dónde acampar: /make-camp compacta y trae un nuevo amanecer.' },
+  { name: 'Anochecer', icon: '☾', from: 90, accent: '#8C7BEA', tip: 'Caminar de noche es arriesgado: el contexto está casi lleno. Acampa con /make-camp.' },
 ]
 
 const LAST = PHASES.length - 1
@@ -166,7 +166,7 @@ async function paint($: EngineInterface, mode: Mode, isForced = false): Promise<
   }
 }
 
-// /acampar encarga el /compact de Claude Code, que corre en cuanto la sesión
+// /make-camp encarga el /compact de Claude Code, que corre en cuanto la sesión
 // queda libre. Quien lo pide aún tiene la sesión ocupada: no se espera.
 const CAMP_FOCUS = 'Conserva el rumbo: objetivos, decisiones tomadas, archivos tocados y próximos pasos. Descarta lo explorado sin salida.'
 const CAMP_TEXT = '⛺ Acampando: la conversación se compacta en cuanto Claude queda libre. Mañana amanece de nuevo.'
@@ -561,7 +561,7 @@ export const register: Register = (on, options) => {
     }
 
     await $.command.register({ name: 'rogue-road-mod', description: 'Repinta el tema y muestra en qué punto del camino (y del día) va la sesión' })
-    await $.command.register({ name: 'acampar', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
+    await $.command.register({ name: 'make-camp', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
     await $.command.register({ name: 'bitacora', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
     await $.command.register({ name: 'sonido', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
     await $.command.register({ name: 'clear-trail', description: 'Limpia el sendero: vacía el contexto (/clear) y empieza de cero' })
@@ -611,9 +611,9 @@ export const register: Register = (on, options) => {
         if (phase < before.phase) {
           $.ui.toast(`Nuevo amanecer: ${ph.name}. El campamento quedó atrás y el camino sigue.`)
         } else if (phase >= LAST) {
-          $.ui.toast(`☾ Anochecer: el contexto está casi lleno. /acampar para compactar y amanecer de nuevo.`)
+          $.ui.toast(`☾ Anochecer: el contexto está casi lleno. /make-camp para compactar y amanecer de nuevo.`)
         } else if ((PHASES[phase]?.from ?? 0) >= CAMP_FROM) {
-          $.ui.toast(`◒ Atardecer: queda poca luz. Piensa dónde acampar (/acampar).`)
+          $.ui.toast(`◒ Atardecer: queda poca luz. Piensa dónde acampar (/make-camp).`)
         } else {
           $.ui.toast(`${ph.icon} ${ph.name}: el explorador sigue el camino.`)
         }
@@ -916,9 +916,9 @@ export const register: Register = (on, options) => {
     }
   })
 
-  // Un comando no puede encargar otro mientras ocupa la sesión: /acampar
+  // Un comando no puede encargar otro mientras ocupa la sesión: /make-camp
   // deja el campamento pendiente y lo encarga al terminar su propio turno.
-  on('command.run', { command: 'acampar' }, async $ => {
+  on('command.run', { command: 'make-camp' }, async $ => {
     await update($, isCampPending, () => true)
     runSoon($)
 
