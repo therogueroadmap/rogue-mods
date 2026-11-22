@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "rogue-mods",
+  "description": "Mods for Claude's interface from The Rogue Roadmap: themes, panels and other changes to how Claude looks and behaves. Each mod installs on its own.",
+  "owner": {
+    "name": "The Rogue Roadmap",
+    "email": "contact@therogueroadmap.com"
+  },
+  "plugins": [
+    {
+      "name": "rasenshuriken",
+      "description": "Theme: a Rasenshuriken that decays into a simple Rasengan as the context window fills up. Dark and light modes.",
+      "source": "./rasenshuriken",
+      "category": "personalization"
+    }
+  ]
+}

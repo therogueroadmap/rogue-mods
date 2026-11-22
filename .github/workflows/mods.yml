@@ -1,0 +1,51 @@
+name: mods
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      mods: ${{ steps.mods.outputs.mods }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shared helpers are in sync
+        run: bash scripts/sync-shared.sh --check
+      - name: List the mods in the catalog
+        id: mods
+        run: |
+          echo "mods=$(node -e "const m=require('./.claude-plugin/marketplace.json');console.log(JSON.stringify(m.plugins.map(p=>p.source.replace(/^\.\//,''))))")" >> "$GITHUB_OUTPUT"
+
+  check:
+    needs: list
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: ${{ fromJSON(needs.list.outputs.mods) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Folder, manifest and catalog names match
+        run: |
+          node -e "
+            const p = require('./${{ matrix.mod }}/.claude-plugin/plugin.json');
+            const required = ['name', 'description', 'version', 'author', 'license'];
+            const missing = required.filter(f => !p[f]);
+            if (missing.length) { console.error('plugin.json missing:', missing); process.exit(1); }
+            if (p.name !== '${{ matrix.mod }}') { console.error('name', p.name, 'does not match folder ${{ matrix.mod }}'); process.exit(1); }
+          "
+      - name: CHANGELOG mentions the current version
+        run: |
+          VERSION=$(node -e "console.log(require('./${{ matrix.mod }}/.claude-plugin/plugin.json').version)")
+          grep -q "\[$VERSION\]" "${{ matrix.mod }}/CHANGELOG.md" || { echo "CHANGELOG.md does not mention [$VERSION]"; exit 1; }
+      - name: Validate
+        run: claude plugin validate "${{ matrix.mod }}"
+      - name: Test
+        run: claude plugin test "${{ matrix.mod }}"
