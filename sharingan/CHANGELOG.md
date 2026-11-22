@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-22
+
+First stable release. No changes since 0.1.1.
+
 ## [0.1.1] - 2026-11-22
 
 ### Fixed

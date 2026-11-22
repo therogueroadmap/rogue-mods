@@ -1,6 +1,6 @@
 {
   "name": "rasenshuriken",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Theme for Claude: a Rasenshuriken that decays into a simple Rasengan as the context window fills up. Dark and light modes.",
   "author": {
     "name": "José R. Pérez Sandó",

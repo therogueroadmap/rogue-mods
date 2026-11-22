@@ -21,7 +21,7 @@ What it adds:
 - A row above the prompt and a status line entry with the stage, context % and power.
 - A toast when the stage changes, and a `/chakra` command with the details.
 
-Version 0.2.0.
+Version 1.0.0.
 
 ### Install
 
@@ -43,7 +43,7 @@ Version 0.2.0.
 
 ### Status
 
-In progress.
+Stable (1.0.0).
 
 ## Español
 
