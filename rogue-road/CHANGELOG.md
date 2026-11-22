@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.5] - 2026-11-22
+
+### Changed
+- The desktop context bar is drawn with characters again, as in the terminal and in `/context`: `█` for each category in its colour, `▒` for the autocompaction buffer and `░` for the free space. It takes about 72 % of the row's columns there, since the app's proportional type draws those glyphs wider than a cell, and it is cut at the edge rather than wrapped.
+
 ## [0.10.4] - 2026-11-22
 
 ### Changed

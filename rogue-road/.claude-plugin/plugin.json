@@ -1,6 +1,6 @@
 {
   "name": "rogue-road",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "description": "Theme for Claude: a hooded explorer walks the roadmap from dawn to dusk as the context window fills up, and stops to wait whenever Claude needs your input. Commits, tests and PRs leave milestones on the road, tool failures bring rain, subagents walk alongside, a logbook pane keeps the journey, and an ambient soundscape follows the day. Camp compacts and brings a new dawn. Dark and light modes.",
   "author": {
     "name": "José R. Pérez Sandó",

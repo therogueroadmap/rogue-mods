@@ -785,9 +785,7 @@ export const register: Register = (on, options) => {
   // ─── La banda sobre el prompt ──────────────────────────────────────
   // Una fila de estado que no se parte (fase, camino, contexto, clima y
   // compañeros, recortada si no entra) con controles compactos a la derecha;
-  // debajo, la barra del desglose. En la terminal la barra es de caracteres;
-  // en el escritorio y el móvil, de cajas que reparten el ancho real de la
-  // fila, porque allí la letra es proporcional y las celdas no miden lo mismo.
+  // debajo, la barra del desglose: █ por categoría, ▒ el colchón y ░ lo libre.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey || (await read($, isBandHidden))) {
       return next(e)
@@ -816,7 +814,11 @@ export const register: Register = (on, options) => {
       book?.threshold === null || book?.threshold === undefined ? null : t.band.autocompact(tokensOf(book.threshold)),
       book?.usd === null || book?.usd === undefined ? null : t.band.cost(book.usd.toFixed(2)),
     ].filter((x): x is string => x !== null)
-    const segments = book === null ? [] : barOf(book.rows, book.max, isGraphic ? 1000 : width)
+    // La barra es de caracteres en todas las superficies, como /context. En el
+    // escritorio y el móvil la letra es proporcional y █ ▒ ░ ocupan más que una
+    // celda, así que la barra usa menos celdas y se recorta si aun así no entra.
+    const barWidth = isGraphic ? Math.max(16, Math.round(width * 0.72)) : width
+    const segments = book === null ? [] : barOf(book.rows, book.max, barWidth)
 
     return (
       <Box flexDirection="column">
@@ -860,20 +862,7 @@ export const register: Register = (on, options) => {
             <Button key="ocultar" label={t.band.hide} role="dismiss" plain dimColor onPress={() => update($, isBandHidden, () => true)} />
           </Box>
         </Box>
-        {detailed && segments.length > 0 && isGraphic && (
-          <Box flexDirection="row" width="100%" height={1}>
-            {segments.map(({ row, cells }) => (
-              <Box
-                key={row.name}
-                flexGrow={cells}
-                flexShrink={1}
-                height={1}
-                backgroundColor={row.kind === 'free' ? 'subtle' : row.kind === 'buffer' ? 'inactive' : row.color}
-              />
-            ))}
-          </Box>
-        )}
-        {detailed && segments.length > 0 && !isGraphic && (
+        {detailed && segments.length > 0 && (
           <Text wrap="truncate">
             {segments.map(({ row, cells }) =>
               row.kind === 'free' ? (
