@@ -410,6 +410,8 @@ export type SceneInput = {
   weather?: Weather
   /** Cuántos subagentes acompañan al viajero. */
   companions?: number
+  /** Cómo dice la insignia «explorando» y «esperándote» en el idioma elegido. */
+  words?: { walking: string; waiting: string }
 }
 
 /** Qué hay bajo un clic en el fondo: la insignia, el viajero, el sol o el campamento. */
@@ -455,8 +457,8 @@ export const scene = (input: SceneInput): string => {
 }
 
 /** La insignia de la esquina: el explorador en un círculo de cielo, el anillo de contexto y la fase. Siempre visible, en píxeles fijos, bajo la barra de título de la app (unos 48 px). */
-const badge = (p: number, pace: Pace, label: string): string => {
-  const state = pace === 'explora' ? 'explorando' : 'esperándote'
+const badge = (p: number, pace: Pace, label: string, words = { walking: 'explorando', waiting: 'esperándote' }): string => {
+  const state = pace === 'explora' ? words.walking : words.waiting
   const title = escape(label === '' ? `${Math.round(p)} %` : label)
   const detail = escape(label === '' ? state : `${Math.round(p)} % · ${state}`)
 
@@ -510,7 +512,7 @@ const marksOf = (marks: SceneMark[]): string =>
     })
     .join('')
 
-const compose = ({ percent, pace, mode, label = '', marks = [], weather = 'despejado', companions = 0 }: SceneInput, lite: boolean): string => {
+const compose = ({ percent, pace, mode, label = '', marks = [], weather = 'despejado', companions = 0, words }: SceneInput, lite: boolean): string => {
   const p = percent ?? 0
   const day = skyAt(p)
   const night = nightOf(day)
@@ -704,6 +706,6 @@ ${weatherVeil(weather)}
 <!-- el explorador, en la viñeta del costado -->
 ${vignette(pace, shadowLen, shadowDir, weather === 'despejado' ? shadowAlpha : shadowAlpha * 0.4, lite || weather !== 'despejado' ? 0 : fireflies, companions)}
 <!-- insignia: siempre a la vista en la esquina -->
-${badge(p, pace, label)}
+${badge(p, pace, label, words)}
 </svg>`
 }

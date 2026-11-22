@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-22
+
+### Added
+- A language setting (`Idioma · Language · Langue`): Spanish, English or French for the row above the prompt, the logbook, the toasts, the backdrop's badge and description, the commands' descriptions and replies, and the requests `/trail-log`, `/pass-the-map` and `/make-camp` send to Claude. The commands keep their English names.
+
+### Fixed
+- The row above the prompt in the desktop app: the status line no longer breaks over two lines (it is one line, cut at the edge), the controls are compact glyphs with `Hide` as the row's close control, and the context bar is drawn with boxes that share the row's real width instead of characters that overflowed it.
+
 ## [0.8.1] - 2026-11-22
 
 ### Changed

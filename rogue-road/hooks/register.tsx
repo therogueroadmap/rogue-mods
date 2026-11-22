@@ -6,6 +6,8 @@ import { makeColors } from './make-colors.js'
 import { BRAND, MARK_COLORS, MAX_MARKS, scene, zoneAt } from './scene'
 import type { Hex, Mode } from './scene'
 import { soundOf } from './sound'
+import { TEXT, langOf } from './i18n'
+import type { Texts } from './i18n'
 
 // ─── Las seis fases del día ──────────────────────────────────────────
 // La exploración empieza al alba con el contexto vacío; cada respuesta
@@ -13,6 +15,7 @@ import { soundOf } from './sound'
 // compacta la conversación) para que vuelva a amanecer.
 
 type Phase = {
+  /** Nombre y consejo, en el idioma elegido. */
   name: string
   icon: string
   from: number
@@ -21,19 +24,28 @@ type Phase = {
   accent: Hex
 }
 
-const PHASES: Phase[] = [
-  { name: 'Alba', icon: '◓', from: 0, accent: '#E0708D', tip: 'El camino está despejado: contexto fresco y todo por explorar.' },
-  { name: 'Mañana', icon: '☀', from: 15, accent: '#F7792C', tip: 'Buen ritmo. El explorador avanza con el sol a la espalda.' },
-  { name: 'Mediodía', icon: '☀', from: 35, accent: '#F7792C', tip: 'Medio camino recorrido. La conversación tiene mucho contexto útil.' },
-  { name: 'Tarde', icon: '☀', from: 55, accent: '#F2672E', tip: 'Las sombras se alargan: lo más antiguo de la conversación empieza a pesar.' },
-  { name: 'Atardecer', icon: '◒', from: 75, accent: '#EC553F', tip: 'Queda poca luz. Planea dónde acampar: /make-camp compacta y trae un nuevo amanecer.' },
-  { name: 'Anochecer', icon: '☾', from: 90, accent: '#8C7BEA', tip: 'Caminar de noche es arriesgado: el contexto está casi lleno. Acampa con /make-camp.' },
+// El idioma de la banda, la bitácora, los avisos y el fondo: lo fija register()
+// con el ajuste «Idioma». Los comandos quedan en inglés en todos los idiomas.
+let t: Texts = TEXT.es
+
+const PHASES: Omit<Phase, 'name' | 'tip'>[] = [
+  { icon: '◓', from: 0, accent: '#E0708D' },
+  { icon: '☀', from: 15, accent: '#F7792C' },
+  { icon: '☀', from: 35, accent: '#F7792C' },
+  { icon: '☀', from: 55, accent: '#F2672E' },
+  { icon: '◒', from: 75, accent: '#EC553F' },
+  { icon: '☾', from: 90, accent: '#8C7BEA' },
 ]
 
 const LAST = PHASES.length - 1
 const CAMP_FROM = 75
 
-const phaseAt = (i: number): Phase => PHASES[Math.max(0, Math.min(LAST, i))] ?? PHASES[0]!
+const phaseAt = (i: number): Phase => {
+  const k = Math.max(0, Math.min(LAST, i))
+  const words = t.phases[k] ?? { name: '', tip: '' }
+
+  return { ...(PHASES[k] ?? PHASES[0]!), name: words.name, tip: words.tip }
+}
 
 const phaseOf = (percent: number | null): number => {
   const p = percent ?? 0
@@ -72,9 +84,9 @@ const DARK_ANCHORS = {
 const ROLES = { danger: '#E5484D', success: '#4CC38A', warning: '#F5B544', pro: '#9D8CF2' }
 const LIGHT_ROLES = { danger: '#C42B3A', success: '#2F7D55', warning: '#9A6212', pro: '#6550C8' }
 
-const themes = PHASES.map(ph => {
+const themes = PHASES.map((ph, k) => {
   const made = makeColors({
-    label: `Rogue Road · ${ph.name}`,
+    label: `Rogue Road · ${TEXT.es.phases[k]?.name ?? k + 1}`,
     roles: { accent: ph.accent, ...ROLES },
     light: { roles: { accent: ph.accent, ...LIGHT_ROLES }, gray: { anchors: LIGHT_ANCHORS } },
     dark: { gray: { anchors: DARK_ANCHORS } },
@@ -117,28 +129,28 @@ const statusOf = (trail: Trail, pace: Pace): string => {
   const ph = phaseAt(trail.phase)
   const pct = trail.percent === null ? '' : ` · ${trail.percent} %`
 
-  return `${ph.icon} ${ph.name}${pct} · ${pace === 'explora' ? 'explorando' : 'esperándote'}`
+  return `${ph.icon} ${ph.name}${pct} · ${pace === 'explora' ? t.walking : t.waiting}`
 }
 
 // El tema se pinta una vez por fase (y por clima, si suena) y por carga del
 // módulo: si el mod se carga a mitad de sesión, o la app se conecta después,
 // el primer evento lo pinta.
 let paintedKey = ''
-let lastDraw = 'sin pintar aún'
+let lastDraw = ''
 let soundNote = ''
 
 /** Pinta el tema; si la app no acepta el sonido o el estilo, lo pinta sin ellos. */
 async function setLook($: EngineInterface, args: ThemeSetArgs): Promise<ThemeResult> {
   try {
     const set = await $.theme.set(args)
-    soundNote = args.sound === undefined ? 'sonido apagado' : 'sonido listo (actívalo con el parlante de la barra de título)'
+    soundNote = args.sound === undefined ? t.soundNote.off : t.soundNote.ready
 
     return set
   } catch (error) {
     $.ui.log(`rogue-road: ${String(error)}`)
   }
   const { sound: _sound, ...silent } = args
-  soundNote = args.sound === undefined ? 'sonido apagado' : 'la app no aceptó el sonido'
+  soundNote = args.sound === undefined ? t.soundNote.off : t.soundNote.refused
   try {
     return await $.theme.set(silent)
   } catch (error) {
@@ -160,7 +172,7 @@ async function paint($: EngineInterface, mode: Mode, isForced = false): Promise<
   }
   const set = await setLook($, look(phase, mode, w, isSound))
   paintedKey = set.isDrawn ? key : ''
-  lastDraw = set.isDrawn ? 'pintado' : `no pintado: ${set.reason ?? 'sin motivo'}`
+  lastDraw = set.isDrawn ? t.draw.painted : t.draw.notPainted(set.reason ?? t.draw.noReason)
   if (!set.isDrawn) {
     $.ui.log(`rogue-road: ${lastDraw}`)
   }
@@ -168,25 +180,22 @@ async function paint($: EngineInterface, mode: Mode, isForced = false): Promise<
 
 // /make-camp encarga el /compact de Claude Code, que corre en cuanto la sesión
 // queda libre. Quien lo pide aún tiene la sesión ocupada: no se espera.
-const CAMP_FOCUS = 'Conserva el rumbo: objetivos, decisiones tomadas, archivos tocados y próximos pasos. Descarta lo explorado sin salida.'
-const CAMP_TEXT = '⛺ Acampando: la conversación se compacta en cuanto Claude queda libre. Mañana amanece de nuevo.'
 
 function camp($: EngineInterface): void {
-  void addEntry($, 'acampada', 'Acampa: la conversación se compacta')
-  $.command.run({ command: 'compact', args: CAMP_FOCUS }).catch((error: unknown) => {
+  void addEntry($, 'acampada', t.entry.camp)
+  $.command.run({ command: 'compact', args: t.campFocus }).catch((error: unknown) => {
     $.ui.log(`rogue-road: no se pudo acampar: ${String(error)}`)
-    $.ui.toast('No se pudo acampar. Usa /compact directamente.')
+    $.ui.toast(t.toast.campFail)
   })
 }
 
 // /clear-trail encarga el /clear de Claude Code: el contexto empieza de cero.
-const CLEAR_TEXT = '⌫ Limpiando el sendero: el contexto se vacía en cuanto Claude queda libre. La bitácora conserva lo recorrido.'
 
 function clearTrail($: EngineInterface): void {
-  void addEntry($, 'limpieza', 'Limpia el sendero: el contexto empieza de cero')
+  void addEntry($, 'limpieza', t.entry.clear)
   $.command.run({ command: 'clear', args: '' }).catch((error: unknown) => {
     $.ui.log(`rogue-road: no se pudo limpiar el sendero: ${String(error)}`)
-    $.ui.toast('No se pudo limpiar el sendero. Usa /clear directamente.')
+    $.ui.toast(t.toast.clearFail)
   })
 }
 
@@ -216,8 +225,8 @@ async function tryCommand($: EngineInterface, command: string, args: string): Pr
 async function runPendingNow($: EngineInterface): Promise<void> {
   if (await read($, isCampPending)) {
     await update($, isCampPending, () => false)
-    if (await tryCommand($, 'compact', CAMP_FOCUS)) {
-      await addEntry($, 'acampada', 'Acampa: la conversación se compacta')
+    if (await tryCommand($, 'compact', t.campFocus)) {
+      await addEntry($, 'acampada', t.entry.camp)
     } else {
       await update($, isCampPending, () => true)
     }
@@ -225,7 +234,7 @@ async function runPendingNow($: EngineInterface): Promise<void> {
   if (await read($, isClearPending)) {
     await update($, isClearPending, () => false)
     if (await tryCommand($, 'clear', '')) {
-      await addEntry($, 'limpieza', 'Limpia el sendero: el contexto empieza de cero')
+      await addEntry($, 'limpieza', t.entry.clear)
     } else {
       await update($, isClearPending, () => true)
     }
@@ -240,14 +249,9 @@ function submitSoon($: EngineInterface, text: string, what: string): void {
   $.clock.after(200, () => {
     $.prompt.submit({ text }).catch((error: unknown) => {
       $.ui.log(`rogue-road: no se pudo ${what}: ${String(error)}`)
-      $.ui.toast(`No se pudo ${what}. Inténtalo de nuevo cuando Claude termine.`)
+      $.ui.toast(t.toast.submitFail(what))
     })
   })
-}
-
-const KIND_TEXT: Record<EntryKind, string> = {
-  commit: 'commit', tests: 'tests en verde', pr: 'PR', push: 'push', fase: 'fase', amanecer: 'amanecer', clima: 'clima',
-  compañero: 'compañero', acampada: 'acampada', limpieza: 'limpieza', resumen: 'resumen', relevo: 'relevo',
 }
 
 /** La bitácora del día como lista para el modelo. */
@@ -255,41 +259,10 @@ const digest = (list: Entry[]): string => {
   const lines = today(list)
     .filter(x => x.kind !== 'resumen' && x.kind !== 'relevo')
     .slice(-60)
-    .map(x => `- ${clockOf(x.at)} · ${x.percent} % · ${KIND_TEXT[x.kind]}: ${x.label}`)
+    .map(x => `- ${clockOf(x.at)} · ${x.percent} % · ${t.kinds[x.kind]}: ${x.label}`)
 
-  return lines.length === 0 ? '- (sin entradas)' : lines.join('\n')
+  return lines.length === 0 ? t.noEntries : lines.join('\n')
 }
-
-const trailLogPrompt = (focus: string, log: string): string => `Cierra el día de viaje con un resumen de esta sesión (lo pide /trail-log, del mod rogue-road). Escríbelo en el idioma de la conversación, breve y fácil de escanear:
-
-1. Objetivo de la sesión.
-2. Qué se hizo: cambios concretos, con hashes de commit, ramas y URLs de PR cuando existan.
-3. Decisiones tomadas y por qué.
-4. Qué quedó pendiente o sin verificar. Márcalo como tal: no des por hecho lo que no comprobaste.
-5. Próximos pasos sugeridos.
-
-No hagas cambios ni ejecutes comandos: solo resume lo que ya pasó.${focus === '' ? '' : `\n\nFoco pedido: ${focus}`}
-
-Bitácora del mod (hitos, fases y clima de hoy):
-${log}`
-
-const passTheMapPrompt = (purpose: string, log: string): string => `Pasa el mapa: prepara un handoff para que una sesión nueva continúe este trabajo (lo pide /pass-the-map, del mod rogue-road).
-
-Propósito de la próxima sesión: ${purpose === '' ? 'continuar el trabajo en curso' : purpose}
-
-Si la skill \`handoff\` está disponible, úsala con ese propósito. Si no lo está, escribe tú el documento con sus mismas reglas:
-
-- Un solo archivo markdown en el directorio temporal del sistema ($TMPDIR, si no /tmp; %TEMP% en Windows), no en el repositorio.
-- El hilo vivo: qué está en curso, por qué y qué sigue, orientado al propósito indicado.
-- Referencia specs, planes, issues, commits y diffs por ruta o URL; no los copies.
-- Una sección «Skills sugeridas» con lo que debería usar el próximo agente.
-- Ningún secreto: claves, tokens o contraseñas quedan redactados.
-- Distingue lo verificado de lo supuesto: no escribas como hecho algo que no comprobaste.
-
-Al terminar, dime la ruta exacta del archivo y recuérdame copiarlo a un lugar duradero si la próxima sesión no empieza pronto o corre en otra máquina. No cambies nada más.
-
-Bitácora del mod (hitos, fases y clima de hoy):
-${log}`
 
 /** Camino en miniatura para la terminal: recorrido (• en cada hito), explorador, por recorrer y campamento. */
 const miniRoad = (percent: number | null, pace: Pace, cells = 18, marks: number[] = []): { done: string; rogue: string; ahead: string } => {
@@ -362,7 +335,7 @@ export const milestoneOf = (tool: string, input: unknown, response: unknown): { 
       return { kind: 'commit', label: subject.trim().slice(0, 80) }
     }
     if (/\bgh\s+pr\s+create\b/.test(cmd)) {
-      return { kind: 'pr', label: /https:\/\/\S+\/pull\/\d+/.exec(out)?.[0] ?? 'PR abierto' }
+      return { kind: 'pr', label: /https:\/\/\S+\/pull\/\d+/.exec(out)?.[0] ?? t.entry.prOpen }
     }
     if (/\bgit\s+push\b/.test(cmd)) {
       return { kind: 'push', label: `push ${/\bgit\s+push\s+(?:-\S+\s+)*(\S+\s+\S+)/.exec(cmd)?.[1] ?? ''}`.trim() }
@@ -372,23 +345,18 @@ export const milestoneOf = (tool: string, input: unknown, response: unknown): { 
     }
   }
   if (/create_pull_request$/.test(tool)) {
-    return { kind: 'pr', label: text(args['title']) || 'PR abierto' }
+    return { kind: 'pr', label: text(args['title']) || t.entry.prOpen }
   }
 
   return null
 }
 
-const MARK_TEXT: Record<MarkKind, string> = { commit: 'commit', tests: 'tests en verde', pr: 'PR', push: 'push' }
 
 // ─── El clima: sigue a los fallos de las herramientas y a los límites ─
 
 type Sky = { name: string; icon: string; toast: string }
-const WEATHER: Record<Weather, Sky> = {
-  despejado: { name: 'despejado', icon: '☼', toast: '☼ Se despeja: las herramientas vuelven a responder.' },
-  nublado: { name: 'nublado', icon: '☁', toast: '☁ Se nubla: un par de herramientas fallaron.' },
-  lluvia: { name: 'lluvia', icon: '☂', toast: '☂ Llueve: varias herramientas fallaron seguidas. Quizás convenga revisar el rumbo.' },
-  tormenta: { name: 'tormenta', icon: '⛈', toast: '⛈ Tormenta en el horizonte: un límite de uso pasó del 80 %.' },
-}
+const WEATHER_ICON: Record<Weather, string> = { despejado: '☼', nublado: '☁', lluvia: '☂', tormenta: '⛈' }
+const skyOf = (w: Weather): Sky => ({ icon: WEATHER_ICON[w], ...t.weather[w] })
 const WINDOW = 10
 
 export const weatherOf = (results: boolean[], limits: { percentUsed: number }[]): Weather => {
@@ -406,8 +374,8 @@ async function refreshWeather($: EngineInterface, mode: Mode): Promise<void> {
     return
   }
   await update($, weather, () => next)
-  await addEntry($, 'clima', `${WEATHER[next].icon} ${WEATHER[next].name}`)
-  $.ui.toast(WEATHER[next].toast)
+  await addEntry($, 'clima', `${skyOf(next).icon} ${skyOf(next).name}`)
+  $.ui.toast(skyOf(next).toast)
   await paint($, mode)
 }
 
@@ -434,7 +402,6 @@ async function setSound($: EngineInterface, mode: Mode, config: string, on: bool
 // ─── El panel de la bitácora ─────────────────────────────────────────
 
 const PANE = 'bitacora'
-const PANE_TITLE = 'Bitácora del viaje'
 
 const ENTRY_ICON: Record<EntryKind, string> = {
   commit: '●', tests: '✓', pr: '⇡', push: '↑', fase: '◐', amanecer: '◓', clima: '~', compañero: '⚇', acampada: '⛺',
@@ -450,9 +417,9 @@ const clockOf = (ms: number): string => {
 /** Resumen de un día de viaje: cuántos commits, tests, pushes y PRs. */
 const tally = (list: Entry[]): string => {
   const n = (k: MarkKind): number => list.filter(x => x.kind === k).length
-  const parts = (['commit', 'tests', 'push', 'pr'] as const).filter(k => n(k) > 0).map(k => `${n(k)} ${MARK_TEXT[k]}`)
+  const parts = (['commit', 'tests', 'push', 'pr'] as const).filter(k => n(k) > 0).map(k => `${n(k)} ${t.marks[k]}`)
 
-  return parts.length === 0 ? 'sin hitos' : parts.join(' · ')
+  return parts.length === 0 ? t.pane.noMarks : parts.join(' · ')
 }
 
 /** Los días anteriores de la bitácora, cada uno cerrado por un amanecer. */
@@ -484,7 +451,6 @@ const tokensOf = (n: number): string => {
   return String(Math.round(n))
 }
 
-const LIMIT_NAMES: Record<string, string> = { five_hour: '5 h', seven_day: '7 días', spend_limit: 'gasto' }
 
 /** Hora local corta de un instante ISO, para el reinicio de un límite. */
 const resetOf = (iso: string | null): string => {
@@ -493,7 +459,7 @@ const resetOf = (iso: string | null): string => {
   }
   const d = new Date(iso)
 
-  return Number.isNaN(d.getTime()) ? '' : ` (reinicia ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')})`
+  return Number.isNaN(d.getTime()) ? '' : t.band.resets(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`)
 }
 
 /**
@@ -552,6 +518,7 @@ async function setPace($: EngineInterface, next: Pace): Promise<void> {
 
 export const register: Register = (on, options) => {
   const mode = modeOf(options.modo)
+  t = TEXT[langOf(options.idioma)]
   const soundConfig = options.sonido === 'desactivado' ? 'desactivado' : 'activado'
 
   on('session.start', async ($, e, next) => {
@@ -560,13 +527,13 @@ export const register: Register = (on, options) => {
       $.ui.log(unpainted)
     }
 
-    await $.command.register({ name: 'rogue-road-mod', description: 'Repinta el tema y muestra en qué punto del camino (y del día) va la sesión' })
-    await $.command.register({ name: 'make-camp', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
-    await $.command.register({ name: 'logbook', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
-    await $.command.register({ name: 'sound', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
-    await $.command.register({ name: 'clear-trail', description: 'Limpia el sendero: vacía el contexto (/clear) y empieza de cero' })
-    await $.command.register({ name: 'trail-log', description: 'Pide a Claude el resumen de la sesión para cerrar el día', argumentHint: '[foco]' })
-    await $.command.register({ name: 'pass-the-map', description: 'Pasa el mapa: un handoff para continuar en una sesión nueva (skill handoff)', argumentHint: '[propósito de la próxima sesión]' })
+    await $.command.register({ name: 'rogue-road-mod', description: t.cmd.rogueRoadMod })
+    await $.command.register({ name: 'make-camp', description: t.cmd.makeCamp })
+    await $.command.register({ name: 'logbook', description: t.cmd.logbook })
+    await $.command.register({ name: 'sound', description: t.cmd.sound, argumentHint: '[on | off]' })
+    await $.command.register({ name: 'clear-trail', description: t.cmd.clearTrail })
+    await $.command.register({ name: 'trail-log', description: t.cmd.trailLog, argumentHint: t.cmd.trailLogHint })
+    await $.command.register({ name: 'pass-the-map', description: t.cmd.passTheMap, argumentHint: t.cmd.passTheMapHint })
 
     // El sonido: lo último elegido con /sound, salvo que la opción del mod haya cambiado desde entonces.
     const stored = (await $.store.get(SOUND_KEY).catch(() => undefined)) as { on?: unknown; config?: unknown } | undefined
@@ -599,7 +566,7 @@ export const register: Register = (on, options) => {
 
       if (before.phase !== phase) {
         const ph = phaseAt(phase)
-        await addEntry($, phase < before.phase ? 'amanecer' : 'fase', phase < before.phase ? `Nuevo amanecer: ${ph.name}` : `Entra en ${ph.name}`)
+        await addEntry($, phase < before.phase ? 'amanecer' : 'fase', phase < before.phase ? t.entry.dawn(ph.name) : t.entry.enters(ph.name))
         if (phase < before.phase) {
           // Un nuevo día: el cielo se despeja y los hitos quedan en la bitácora.
           await update($, recent, () => [])
@@ -609,13 +576,13 @@ export const register: Register = (on, options) => {
       if (before.phase !== phase) {
         const ph = phaseAt(phase)
         if (phase < before.phase) {
-          $.ui.toast(`Nuevo amanecer: ${ph.name}. El campamento quedó atrás y el camino sigue.`)
+          $.ui.toast(t.toast.dawn(ph.name))
         } else if (phase >= LAST) {
-          $.ui.toast(`☾ Anochecer: el contexto está casi lleno. /make-camp para compactar y amanecer de nuevo.`)
+          $.ui.toast(t.toast.night)
         } else if ((PHASES[phase]?.from ?? 0) >= CAMP_FROM) {
-          $.ui.toast(`◒ Atardecer: queda poca luz. Piensa dónde acampar (/make-camp).`)
+          $.ui.toast(t.toast.dusk)
         } else {
-          $.ui.toast(`${ph.icon} ${ph.name}: el explorador sigue el camino.`)
+          $.ui.toast(`${ph.icon} ${t.toast.phase(ph.name)}`)
         }
       }
     }
@@ -701,7 +668,7 @@ export const register: Register = (on, options) => {
 
   on('classic.SubagentStart', async ($, e, next) => {
     await update($, companions, list => [...list.filter(c => c.id !== e.agent_id), { id: e.agent_id, type: e.agent_type }])
-    await addEntry($, 'compañero', `Se une ${e.agent_type}`)
+    await addEntry($, 'compañero', t.entry.joins(e.agent_type))
 
     return next(e)
   }).catch(($, e, next) => next(e))
@@ -710,7 +677,7 @@ export const register: Register = (on, options) => {
     const was = (await read($, companions)).some(c => c.id === e.agent_id)
     await update($, companions, list => list.filter(c => c.id !== e.agent_id))
     if (was) {
-      await addEntry($, 'compañero', `${e.agent_type} vuelve con lo que encontró`)
+      await addEntry($, 'compañero', t.entry.returns(e.agent_type))
     }
 
     return next(e)
@@ -746,11 +713,10 @@ export const register: Register = (on, options) => {
     const marks = marksOf(await read($, journal))
     const w = await read($, weather)
     const mates = (await read($, companions)).length
-    const alt =
-      `${ph.name}: un explorador encapuchado ${now === 'explora' ? 'camina' : 'espera con su farol'} sobre un camino; ${percent ?? 0} % del contexto recorrido` +
-      `; clima ${WEATHER[w].name}; ${marks.length} hitos en el camino${mates > 0 ? `; ${mates} compañeros` : ''}`
+    const alt = t.alt(ph.name, now === 'explora', percent ?? 0, skyOf(w).name, marks.length, mates)
+    const words = { walking: t.walking, waiting: t.waiting }
 
-    return <Svg source={scene({ percent, pace: now, mode, label: ph.name, marks, weather: w, companions: mates })} alt={alt} isInteractive />
+    return <Svg source={scene({ percent, pace: now, mode, label: ph.name, marks, weather: w, companions: mates, words })} alt={alt} isInteractive />
   })
 
   // ─── Fondo interactivo ─────────────────────────────────────────────
@@ -764,29 +730,35 @@ export const register: Register = (on, options) => {
     const p = percent ?? 0
     const zone = zoneAt(e.x, e.y, p)
     if (zone === 'insignia') {
-      await $.ui.open({ id: PANE, title: PANE_TITLE })
+      await $.ui.open({ id: PANE, title: t.pane.title })
     } else if (zone === 'viajero') {
       const ph = phaseAt(phase)
-      const w = WEATHER[await read($, weather)]
+      const w = skyOf(await read($, weather))
       const mates = await read($, companions)
-      $.ui.toast(`${ph.icon} ${ph.name} · ${p} % · ${w.icon} ${w.name}${mates.length > 0 ? ` · ${mates.length} compañeros` : ''}. ${ph.tip}`)
+      $.ui.toast(t.toast.traveler(`${ph.icon} ${ph.name} · ${p} % · ${w.icon} ${w.name}${mates.length > 0 ? ` · ${t.toast.mates(mates.length)}` : ''}`, ph.tip))
     } else if (zone === 'sol') {
       const book = await read($, ledger)
       const rows = (book?.rows ?? []).filter(r => r.kind === 'used').map(r => `${r.name} ${tokensOf(r.tokens)}`)
       const fill = book?.tokens === null || book === null ? `${p} %` : `${tokensOf(book.tokens)}/${tokensOf(book.window)}`
-      $.ui.toast(`☀ Contexto ${fill}${rows.length > 0 ? `: ${rows.join(' · ')}` : ''}`)
+      $.ui.toast(t.toast.context(fill, rows.join(' · ')))
     } else if (zone === 'campamento') {
       if (p >= CAMP_FROM) {
         camp($)
-        $.ui.toast(CAMP_TEXT)
+        $.ui.toast(t.campText)
       } else {
-        $.ui.toast(`⛺ Aún hay luz (${p} %). El campamento espera al atardecer, desde el ${CAMP_FROM} %.`)
+        $.ui.toast(t.toast.stillLight(p, CAMP_FROM))
       }
     }
 
     return next(e)
   })
 
+  // ─── La banda sobre el prompt ──────────────────────────────────────
+  // Una fila de estado que no se parte (fase, camino, contexto, clima y
+  // compañeros, recortada si no entra) con controles compactos a la derecha;
+  // debajo, la barra del desglose. En la terminal la barra es de caracteres;
+  // en el escritorio y el móvil, de cajas que reparten el ancho real de la
+  // fila, porque allí la letra es proporcional y las celdas no miden lo mismo.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey || (await read($, isBandHidden))) {
       return next(e)
@@ -800,7 +772,8 @@ export const register: Register = (on, options) => {
     const w = await read($, weather)
     const mates = (await read($, companions)).length
     const isSound = await read($, isSoundOn)
-    const road = miniRoad(percent, now, 18, marks.map(m => m.percent))
+    const isGraphic = e.surface === 'desktop' || e.surface === 'mobile'
+    const road = miniRoad(percent, now, isGraphic ? 12 : 18, marks.map(m => m.percent))
     const width = Math.max(20, Math.min(160, (e.props.bodyColumns ?? 80) - 2))
     const { Box, Button, Text } = $.ui.resolve(e)
     const used = book?.rows.filter(r => r.kind === 'used') ?? []
@@ -809,47 +782,70 @@ export const register: Register = (on, options) => {
     const fill = book?.tokens === null || book === null ? '' : ` · ${tokensOf(book.tokens)}/${tokensOf(book.window)}`
     const extras = [
       book?.model ?? null,
-      ...(book?.limits ?? []).map(l => `límite ${LIMIT_NAMES[l.kind] ?? l.kind} ${l.percentUsed} %${resetOf(l.resetsAt)}`),
-      book?.threshold === null || book?.threshold === undefined ? null : `autocompacta a ${tokensOf(book.threshold)}`,
-      book?.usd === null || book?.usd === undefined ? null : `≈ US$ ${book.usd.toFixed(2)} (estimado)`,
+      ...(book?.limits ?? []).map(l => t.band.limit(t.band.limitNames[l.kind] ?? l.kind, l.percentUsed, resetOf(l.resetsAt))),
+      book?.threshold === null || book?.threshold === undefined ? null : t.band.autocompact(tokensOf(book.threshold)),
+      book?.usd === null || book?.usd === undefined ? null : t.band.cost(book.usd.toFixed(2)),
     ].filter((x): x is string => x !== null)
+    const segments = book === null ? [] : barOf(book.rows, book.max, isGraphic ? 1000 : width)
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" gap={1}>
-          <Text color={ph.accent}>
-            {ph.icon} {ph.name}
-          </Text>
-          <Text>
-            <Text color={BRAND.orange}>{road.done}</Text>
-            <Text bold>{road.rogue}</Text>
-            <Text dimColor>{road.ahead}</Text>
-            <Text dimColor> ▲</Text>
-          </Text>
-          <Text dimColor>
-            {percent === null ? '—' : `${percent} %`}
-            {fill} · {now === 'explora' ? 'explorando' : 'esperándote'}
-          </Text>
-          {w !== 'despejado' && <Text color={w === 'tormenta' ? 'warning' : undefined}>{WEATHER[w].icon} {WEATHER[w].name}</Text>}
-          {mates > 0 && <Text dimColor>⚇ {mates}</Text>}
-          {(percent ?? 0) >= CAMP_FROM && (
-            <Button
-              key="acampar"
-              label="⛺ Acampar"
-              onPress={() => {
-                camp($)
-                $.ui.toast(CAMP_TEXT)
-              }}
-            />
-          )}
-          <Button key="bitacora" label="Bitácora" onPress={() => $.ui.open({ id: PANE, title: PANE_TITLE })} />
-          <Button key="sonido" label={isSound ? '♪ Sonido' : '♪ Silencio'} onPress={() => setSound($, mode, soundConfig, !isSound)} />
-          <Button key="detalle" label={detailed ? 'Menos' : 'Detalle'} onPress={() => update($, isDetailed, d => !d)} />
-          <Button key="ocultar" label="Ocultar" onPress={() => update($, isBandHidden, () => true)} />
+        <Box flexDirection="row" gap={1} alignItems="center">
+          <Box flexGrow={1} flexShrink={1}>
+            <Text wrap="truncate">
+              <Text color={ph.accent}>
+                {ph.icon} {ph.name}{' '}
+              </Text>
+              <Text color={BRAND.orange}>{road.done}</Text>
+              <Text bold>{road.rogue}</Text>
+              <Text dimColor>{road.ahead} ▲ </Text>
+              <Text dimColor>
+                {percent === null ? '—' : `${percent} %`}
+                {fill} · {now === 'explora' ? t.walking : t.waiting}
+              </Text>
+              {w !== 'despejado' && (
+                <Text color={w === 'tormenta' ? 'warning' : undefined}>
+                  {' '}
+                  · {skyOf(w).icon} {skyOf(w).name}
+                </Text>
+              )}
+              {mates > 0 && <Text dimColor> · ⚇ {mates}</Text>}
+            </Text>
+          </Box>
+          <Box flexDirection="row" gap={1} flexShrink={0}>
+            {(percent ?? 0) >= CAMP_FROM && (
+              <Button
+                key="acampar"
+                label={t.band.camp}
+                variant="primary"
+                onPress={() => {
+                  camp($)
+                  $.ui.toast(t.campText)
+                }}
+              />
+            )}
+            <Button key="bitacora" label="☰" plain dimColor onPress={() => $.ui.open({ id: PANE, title: t.pane.title })} />
+            <Button key="sonido" label={isSound ? '♪' : '✕♪'} plain dimColor onPress={() => setSound($, mode, soundConfig, !isSound)} />
+            <Button key="detalle" label={detailed ? '▴' : '▾'} plain dimColor onPress={() => update($, isDetailed, d => !d)} />
+            <Button key="ocultar" label={t.band.hide} role="dismiss" plain dimColor onPress={() => update($, isBandHidden, () => true)} />
+          </Box>
         </Box>
-        {detailed && book !== null && book.rows.length > 0 && (
-          <Text>
-            {barOf(book.rows, book.max, width).map(({ row, cells }) =>
+        {detailed && segments.length > 0 && isGraphic && (
+          <Box flexDirection="row" width="100%" height={1}>
+            {segments.map(({ row, cells }) => (
+              <Box
+                key={row.name}
+                flexGrow={cells}
+                flexShrink={1}
+                height={1}
+                backgroundColor={row.kind === 'free' ? 'subtle' : row.kind === 'buffer' ? 'inactive' : row.color}
+              />
+            ))}
+          </Box>
+        )}
+        {detailed && segments.length > 0 && !isGraphic && (
+          <Text wrap="truncate">
+            {segments.map(({ row, cells }) =>
               row.kind === 'free' ? (
                 <Text key={row.name} dimColor>
                   {'░'.repeat(cells)}
@@ -881,7 +877,7 @@ export const register: Register = (on, options) => {
             {free !== undefined && <Text dimColor>░ {free.name} {tokensOf(free.tokens)}</Text>}
           </Text>
         )}
-        {detailed && extras.length > 0 && <Text dimColor>{extras.join(' · ')}</Text>}
+        {detailed && extras.length > 0 && <Text dimColor wrap="wrap">{extras.join(' · ')}</Text>}
       </Box>
     )
   })
@@ -900,18 +896,18 @@ export const register: Register = (on, options) => {
       const to = PHASES[k + 1]?.from ?? 100
       const range = `${x.from}–${to} %`
 
-      return `${k === phase ? '▶' : ' '} ${range.padEnd(9)} ${x.icon} ${x.name}`
+      return `${k === phase ? '▶' : ' '} ${range.padEnd(9)} ${x.icon} ${phaseAt(k).name}`
     }).join('\n')
 
     return {
       text: [
-        `${ph.icon} ${ph.name} · contexto ${percent === null ? 'sin medir aún' : `${percent} %`}`,
+        `${ph.icon} ${ph.name} · ${t.reply.context} ${percent === null ? t.reply.unmeasured : `${percent} %`}`,
         `${road.done}${road.rogue}${road.ahead} ▲`,
         ph.tip,
         '',
         ladder,
         '',
-        `Superficies: ${surfaces.length === 0 ? 'ninguna' : surfaces.join(', ')} · fondo ${lastDraw} · ${soundNote}`,
+        t.reply.surfaces(surfaces.length === 0 ? t.reply.none : surfaces.join(', '), lastDraw === '' ? t.draw.unpainted : lastDraw, soundNote),
       ].join('\n'),
     }
   })
@@ -922,7 +918,7 @@ export const register: Register = (on, options) => {
     await update($, isCampPending, () => true)
     runSoon($)
 
-    return { text: CAMP_TEXT }
+    return { text: t.campText }
   })
 
   // ─── Cerrar el día: limpiar, resumir o pasar el mapa ───────────────
@@ -931,23 +927,23 @@ export const register: Register = (on, options) => {
     await update($, isClearPending, () => true)
     runSoon($)
 
-    return { text: CLEAR_TEXT }
+    return { text: t.clearText }
   })
 
   on('command.run', { command: 'trail-log' }, async ($, e) => {
     const focus = e.args.trim()
-    await addEntry($, 'resumen', focus === '' ? 'Pide el resumen del día' : `Pide el resumen del día: ${focus}`)
-    submitSoon($, trailLogPrompt(focus, digest(await read($, journal))), 'pedir el resumen')
+    await addEntry($, 'resumen', t.entry.summary(focus))
+    submitSoon($, t.trailLogPrompt(focus, digest(await read($, journal))), t.what.summary)
 
-    return { text: '✎ Junto a la fogata: Claude escribe el resumen de la sesión.' }
+    return { text: t.reply.summary }
   })
 
   on('command.run', { command: 'pass-the-map' }, async ($, e) => {
     const purpose = e.args.trim()
-    await addEntry($, 'relevo', purpose === '' ? 'Pasa el mapa a una sesión nueva' : `Pasa el mapa: ${purpose}`)
-    submitSoon($, passTheMapPrompt(purpose, digest(await read($, journal))), 'pasar el mapa')
+    await addEntry($, 'relevo', t.entry.handoff(purpose))
+    submitSoon($, t.passTheMapPrompt(purpose, digest(await read($, journal))), t.what.handoff)
 
-    return { text: '⇢ Pasando el mapa: Claude prepara el handoff y te dirá dónde quedó el archivo.' }
+    return { text: t.reply.handoff }
   })
 
   on('command.run', { command: 'sound' }, async ($, e) => {
@@ -956,16 +952,14 @@ export const register: Register = (on, options) => {
     await setSound($, mode, soundConfig, want)
 
     return {
-      text: want
-        ? '♪ Sonido habilitado: el camino suena según la fase y el clima. En la app de escritorio, activa también el parlante de la barra de título.'
-        : '♪ Sonido deshabilitado. /sound on lo vuelve a habilitar.',
+      text: want ? t.reply.soundOn : t.reply.soundOff,
     }
   })
 
   on('command.run', { command: 'logbook' }, async $ => {
-    const opened = await $.ui.open({ id: PANE, title: PANE_TITLE })
+    const opened = await $.ui.open({ id: PANE, title: t.pane.title })
 
-    return { text: opened.isPlaced ? 'Bitácora abierta.' : `La bitácora queda lista para abrirse: ${opened.reason}` }
+    return { text: opened.isPlaced ? t.reply.logbookOpen : t.reply.logbookLater(opened.reason) }
   })
 
   // ─── La bitácora, en un panel junto a la conversación ─────────────
@@ -988,15 +982,15 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" gap={1}>
         <Box flexDirection="column">
           <Text bold color={ph.accent}>
-            Día {days.length + 1} · {ph.icon} {ph.name} · {percent ?? 0} %
+            {t.pane.day(days.length + 1)} · {ph.icon} {ph.name} · {percent ?? 0} %
           </Text>
           <Text dimColor>
-            {WEATHER[w].icon} {WEATHER[w].name} · {tally(day)}
+            {skyOf(w).icon} {skyOf(w).name} · {tally(day)}
           </Text>
-          <Text dimColor>{mates.length === 0 ? 'Viaja solo.' : `⚇ Con ${mates.map(c => c.type).join(', ')}`}</Text>
+          <Text dimColor>{mates.length === 0 ? t.pane.solo : t.pane.with(mates.map(c => c.type).join(', '))}</Text>
         </Box>
         <Box flexDirection="column">
-          {shown.length === 0 && <Text dimColor>El día recién empieza: todavía no hay nada anotado.</Text>}
+          {shown.length === 0 && <Text dimColor>{t.pane.empty}</Text>}
           {shown.map((x, k) => {
             const head = k === 0 || phaseOf(shown[k - 1]?.percent ?? 0) !== phaseOf(x.percent)
             const at = phaseAt(phaseOf(x.percent))
@@ -1013,7 +1007,7 @@ export const register: Register = (on, options) => {
                   <Text dimColor>
                     {clockOf(x.at)} · {x.percent} %{' '}
                   </Text>
-                  <Text>{MARK_KINDS.includes(x.kind) ? `${MARK_TEXT[x.kind as MarkKind]}: ${x.label}` : x.label}</Text>
+                  <Text>{MARK_KINDS.includes(x.kind) ? `${t.marks[x.kind as MarkKind]}: ${x.label}` : x.label}</Text>
                 </Text>
               </Box>
             )
@@ -1021,10 +1015,10 @@ export const register: Register = (on, options) => {
         </Box>
         {days.length > 0 && (
           <Box flexDirection="column">
-            <Text bold>Días anteriores</Text>
+            <Text bold>{t.pane.pastDays}</Text>
             {days.slice(-5).map((d, k) => (
               <Text key={`dia-${k}`} dimColor>
-                Día {days.length - Math.min(5, days.length) + k + 1}: {tally(d)}
+                {t.pane.day(days.length - Math.min(5, days.length) + k + 1)}: {tally(d)}
               </Text>
             ))}
           </Box>
@@ -1032,10 +1026,10 @@ export const register: Register = (on, options) => {
         {(percent ?? 0) >= CAMP_FROM && (
           <Button
             key="acampar-panel"
-            label="⛺ Acampar"
+            label={t.band.camp}
             onPress={() => {
               camp($)
-              $.ui.toast(CAMP_TEXT)
+              $.ui.toast(t.campText)
             }}
           />
         )}

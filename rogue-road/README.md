@@ -36,7 +36,9 @@ What it adds:
 
 - **Closing the day.** `/clear-trail` clears the context and starts from nothing. `/trail-log [focus]` asks Claude for an end-of-session summary. `/pass-the-map [purpose]` asks Claude for a handoff file a new session can pick up, with the [`handoff`](https://github.com/mattpocock/skills/blob/main/docs/productivity/handoff.md) skill when it is installed. Both attach the day's logbook.
 
-Version 0.8.1.
+- **Three languages.** Spanish, English or French for the row, the logbook, the toasts, the badge and the requests to Claude; the commands stay in English.
+
+Version 0.9.0.
 
 ### Install
 
@@ -49,6 +51,7 @@ Version 0.8.1.
 
 In the plugin's config menu:
 
+- `Idioma · Language · Langue`: `español` (default), `english` or `français`.
 - `Modo de color`: `auto` (follows the app), `claro` (light) or `oscuro` (dark).
 - `Sonido ambiental`: `activado` (default) or `desactivado`. `/sound` and the row's `♪` button change it for the session and remember the choice until this setting changes.
 
@@ -57,13 +60,13 @@ In the plugin's config menu:
 The same row draws in the terminal and in the desktop app:
 
 ```text
-☀ Mediodía ━━•━━━•━━━━◇┄┄┄┄┄┄┄ ▲ 49 % · 154.6k/1M · esperándote ☁ nublado ⚇ 2   [Bitácora] [♪ Sonido] [Detalle] [Ocultar]
+☀ Mediodía ━━•━━━•━━━━◇┄┄┄┄┄┄┄ ▲ 49 % · 154.6k/1M · esperándote · ☁ nublado · ⚇ 2      ☰  ♪  ▴  Ocultar
 ██████████████████▒▒▒▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ■ System prompt 4.5k  ■ System tools 21.3k  ■ Memory files 8.3k  ■ Messages 105.5k  ▒ Autocompact buffer 33k  ░ Free space 812.4k
 Opus 5.5 · límite 5 h 23 % (reinicia 18:00) · límite 7 días 41 % · autocompacta a 967k · ≈ US$ 3.20 (estimado)
 ```
 
-The bar and the legend are `/context`'s breakdown, each category in the colour `/context` gives it, estimated locally after each model response (no extra requests). The cost is an estimate, not the bill. `Detalle` / `Menos` shows or hides everything below the first line.
+The bar and the legend are `/context`'s breakdown, each category in the colour `/context` gives it, estimated locally after each model response (no extra requests). The cost is an estimate, not the bill. `▴` / `▾` shows or hides everything below the first line, `☰` opens the logbook, `♪` turns the sound on or off and `Ocultar` hides the row.
 
 ### Behaviour in the terminal (CLI)
 
@@ -99,6 +102,8 @@ Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y n
 - **Fondo interactivo:** un clic en la insignia abre la bitácora, en el explorador muestra la fase y un consejo, en el sol el desglose del contexto y en el campamento acampa (desde el 75 %).
 
 Para cerrar el día: `/clear-trail` limpia el contexto y empieza de cero, `/trail-log [foco]` le pide a Claude el resumen de la sesión y `/pass-the-map [propósito]` le pide un handoff para continuar en una sesión nueva (con la skill `handoff` si está instalada). Los dos últimos adjuntan la bitácora del día.
+
+El ajuste **Idioma** elige español, inglés o francés para la banda, la bitácora, los avisos, la insignia y los pedidos a Claude; los comandos quedan en inglés.
 
 La instalación, los ajustes y los requisitos están en la sección en inglés.
 

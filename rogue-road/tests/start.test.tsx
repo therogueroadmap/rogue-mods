@@ -392,3 +392,36 @@ test('/pass-the-map pide el handoff con su propósito y las reglas de la skill',
   expect((await pane.find({ type: 'Text', text: /Pasa el mapa: prototipo del panel/ })) !== undefined).toBe(true)
   await pane.unmount()
 })
+
+// ─── 0.9.0: idiomas ────────────────────────────────────────────────────
+
+test('en inglés, la banda, la insignia y las respuestas hablan inglés', { options: { idioma: 'english' } }, async ($, on) => {
+  base(on, 30)
+  on('ui.open', () => ({ value: { isPlaced: true, requestId: 'p' } }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface, props: { hasSurvey: false, bodyColumns: 100 } } as never)
+    expect((await band.find({ type: 'Text', text: /Morning/ })) !== undefined).toBe(true)
+    expect((await band.find({ type: 'Text', text: /waiting for you/ })) !== undefined).toBe(true)
+    await band.unmount()
+  }
+  expect((await backdrop($)).includes('30 % · waiting for you')).toBe(true)
+  const off = await $.command.run(run('sound', 'off'))
+  expect(off.text?.startsWith('♪ Sound off')).toBe(true)
+})
+
+test('en francés, la bitácora y el pedido de resumen hablan francés', { options: { idioma: 'français' } }, async ($, on) => {
+  const prompts: string[] = []
+  const clock = mock.clock(on)
+  base(on, 30)
+  on('ui.open', () => ({ value: { isPlaced: true, requestId: 'p' } }))
+  on('prompt.submit', (_, e) => { prompts.push(e.text); return { text: e.text } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  expect((await $.command.run(run('logbook'))).text).toBe('Carnet ouvert.')
+  await $.command.run(run('trail-log'))
+  await clock.advance(500)
+  expect(prompts[0]?.includes('Écris-le en français')).toBe(true)
+  const pane = await $.ui.mount({ plugin: 'rogue-road', component: 'Pane', requestId: 'bitacora', surface: 'desktop', props: { title: 'Carnet de voyage', isFocused: false, bodyColumns: 48, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } } as never)
+  expect((await pane.find({ type: 'Text', text: /Jour 1 · ☀ Matin/ })) !== undefined).toBe(true)
+  await pane.unmount()
+})
