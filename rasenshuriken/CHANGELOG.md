@@ -2,8 +2,12 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-22
+
+First stable release.
+
 ### Added
-- Plugin icon (`.claude-plugin/icon.png`).
+- Plugin icon (`.claude-plugin/icon.png`), from the brand build.
 
 ## [0.2.0] - 2026-11-22
 

@@ -20,7 +20,7 @@ What it adds:
 - A row above the prompt and a status line entry with the stage and context %, and a `解 Kai` button in Genjutsu.
 - A toast when the stage changes, `/sharingan` with the details and `/kai` to compact.
 
-Version 0.1.1.
+Version 1.0.0.
 
 ### Install
 
@@ -43,7 +43,7 @@ Version 0.1.1.
 
 ### Status
 
-In progress.
+Stable (1.0.0).
 
 ## Español
 
