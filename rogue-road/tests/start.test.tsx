@@ -1,4 +1,7 @@
 import { expect, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
+
+import { sunAt, zoneAt } from '../hooks/scene'
 
 const usage = (percent: number) => ({
   value: { startedAt: 0, context: { tokens: percent * 2000, window: 200000, percent }, rateLimits: [] },
@@ -181,4 +184,137 @@ test('la banda muestra el desglose del contexto, los límites y el costo', async
     expect((await ui.find({ type: 'Button', key: 'detalle' } as never)) !== undefined).toBe(true)
     await ui.unmount()
   }
+})
+
+// ─── 0.6.0: hitos, clima, compañeros, bitácora, sonido y fondo interactivo ─
+
+type On = Parameters<TestBody>[1]
+
+const base = (on: On, percent = 30, sets?: unknown[]) => {
+  const store = new Map<string, unknown>()
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', () => usage(percent))
+  on('theme.set', (_, e) => { sets?.push(e); return { value: { isDrawn: true, requestId: 't' } } })
+  on('ui.status', () => ({ value: undefined }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('store.get', (_, e) => ({ value: store.get((e as { key: string }).key) }))
+  on('store.set', (_, e) => { store.set((e as { key: string }).key, (e as { value: unknown }).value); return { value: undefined } })
+}
+
+const backdrop = async ($: Parameters<TestBody>[0]): Promise<string> => {
+  const ui = await $.ui.mount({ plugin: 'rogue-road', component: 'Backdrop', surface: 'desktop', props: { scene: 'fase-2-auto', plugin: 'rogue-road', glass: false } } as never)
+  const svg = (await ui.find({ type: 'Svg' } as never)) as { props?: { source?: string } } | undefined
+  await ui.unmount()
+
+  return svg?.props?.source ?? ''
+}
+
+test('un commit deja un hito en el camino, en la banda y en la bitácora', async ($, on) => {
+  base(on)
+  on('classic.PostToolUse', () => ({}))
+  on('ui.open', () => ({ value: { isPlaced: true, requestId: 'p' } }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.classic.PostToolUse({
+    tool_name: 'Bash',
+    tool_input: { command: 'git commit -m "feat: el mapa"' },
+    tool_response: { stdout: '[main 1a2b3c4] feat: el mapa\n 1 file changed' },
+    tool_use_id: 'u1',
+  } as never)
+
+  const source = await backdrop($)
+  expect(source.includes('class="mark"')).toBe(true)
+  expect(source.includes('<title>feat: el mapa</title>')).toBe(true)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface, props: { hasSurvey: false } } as never)
+    expect((await band.find({ type: 'Text', text: /•/ })) !== undefined).toBe(true)
+    await band.unmount()
+    const pane = await $.ui.mount({ plugin: 'rogue-road', component: 'Pane', requestId: 'bitacora', surface, props: { title: 'Bitácora del viaje', isFocused: false, bodyColumns: 48, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } } as never)
+    expect((await pane.find({ type: 'Text', text: /commit: feat: el mapa/ })) !== undefined).toBe(true)
+    expect((await pane.find({ type: 'Text', text: /1 commit/ })) !== undefined).toBe(true)
+    await pane.unmount()
+  }
+})
+
+test('los fallos seguidos traen lluvia y los tests en verde despejan', async ($, on) => {
+  const toasts: string[] = []
+  base(on)
+  on('classic.PostToolUse', () => ({}))
+  on('classic.PostToolUseFailure', () => ({}))
+  on('ui.toast', (_, e) => { toasts.push(String((e as { text?: string }).text ?? e)); return { value: undefined } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  for (let i = 0; i < 4; i++) {
+    await $.classic.PostToolUseFailure({ tool_name: 'Bash', tool_input: { command: 'make' }, tool_use_id: `f${i}`, error: 'exit 2' } as never)
+  }
+  expect(toasts.some(t => t.startsWith('☂'))).toBe(true)
+  expect((await backdrop($)).includes('class="rain"')).toBe(true)
+
+  await $.classic.PostToolUse({ tool_name: 'Bash', tool_input: { command: 'npm test' }, tool_response: { stdout: 'ok' }, tool_use_id: 't1' } as never)
+  expect(toasts.some(t => t.startsWith('☼'))).toBe(true)
+  expect((await backdrop($)).includes('class="rain"')).toBe(false)
+})
+
+test('un límite de uso alto trae tormenta', async ($, on) => {
+  let limit = 10
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', () => ({ value: { startedAt: 0, context: { tokens: 60000, window: 200000, percent: 30 }, rateLimits: [{ kind: 'five_hour', percentUsed: limit }] } as never }))
+  on('theme.set', () => ({ value: { isDrawn: true, requestId: 't' } }))
+  on('ui.status', () => ({ value: undefined }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.measure', (_, e) => ({ changed: e.changed }))
+  on('ui.toast', () => ({ value: undefined }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  limit = 86
+  await $.session.measure({ context: { tokens: 60000, window: 200000, percent: 30 }, rateLimits: [{ kind: 'five_hour', percentUsed: 86 }], changed: ['rateLimits'] } as never)
+  const source = await backdrop($)
+  expect(source.includes('class="bolt"')).toBe(true)
+})
+
+test('los subagentes caminan junto al viajero y se van al terminar', async ($, on) => {
+  base(on)
+  on('classic.SubagentStart', () => ({}))
+  on('classic.SubagentStop', () => ({}))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.classic.SubagentStart({ agent_id: 'a1', agent_type: 'Explore' } as never)
+  await $.classic.SubagentStart({ agent_id: 'a2', agent_type: 'general-purpose' } as never)
+  expect((await backdrop($)).includes('companion c1')).toBe(true)
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'terminal', props: { hasSurvey: false } } as never)
+  expect((await band.find({ type: 'Text', text: /⚇ 2/ })) !== undefined).toBe(true)
+  await band.unmount()
+
+  await $.classic.SubagentStop({ agent_id: 'a1', agent_type: 'Explore', stop_hook_active: false, agent_transcript_path: '/x' } as never)
+  await $.classic.SubagentStop({ agent_id: 'a2', agent_type: 'general-purpose', stop_hook_active: false, agent_transcript_path: '/x' } as never)
+  expect((await backdrop($)).includes('companion c0')).toBe(false)
+})
+
+test('el tema suena por defecto, /sonido off lo silencia y la opción lo deja apagado', async ($, on) => {
+  const sets: { sound?: { ambience?: { layers: unknown[] } } }[] = []
+  base(on, 92, sets)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  expect((sets[0]?.sound?.ambience?.layers.length ?? 0) > 0).toBe(true)
+
+  const off = await $.command.run({ command: 'sonido', args: 'off', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 80 } } as never)
+  expect(off.text?.includes('deshabilitado')).toBe(true)
+  expect(sets[sets.length - 1]?.sound).toBe(undefined)
+
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'desktop', props: { hasSurvey: false } } as never)
+  await band.press({ key: 'sonido' })
+  await band.unmount()
+  expect((sets[sets.length - 1]?.sound?.ambience?.layers.length ?? 0) > 0).toBe(true)
+})
+
+test('con la opción de sonido desactivado el tema no suena', { options: { sonido: 'desactivado' } }, async ($, on) => {
+  const sets: { sound?: unknown }[] = []
+  base(on, 30, sets)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  expect(sets[sets.length - 1]?.sound).toBe(undefined)
+})
+
+test('los clics del fondo caen en la insignia, el viajero, el sol y el campamento', () => {
+  expect(zoneAt(0.1, 0.12, 50)).toBe('insignia')
+  expect(zoneAt(0.1, 0.85, 50)).toBe('viajero')
+  expect(zoneAt(0.95, 0.6, 50)).toBe('campamento')
+  const sun = sunAt(40)
+  expect(zoneAt(sun.x / 1600, (sun.y / 520) * 0.64, 40)).toBe('sol')
+  expect(zoneAt(0.5, 0.9, 40)).toBe(null)
 })

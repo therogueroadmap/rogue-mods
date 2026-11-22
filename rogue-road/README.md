@@ -27,8 +27,14 @@ What it adds:
 - Message styles: the person's messages in navy (cream at night), Claude's on paper.
 - A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road` with the details and `/acampar` to compact.
+- **Milestones on the road.** Each commit, push, pull request or test run that passes plants a small flag on the road where it happened in the context (orange commit, green tests, violet PR, cream push). The row above the prompt marks them with `•`. A new dawn starts a fresh road; the logbook keeps the old ones.
+- **Weather that follows the work.** Two failed tools in the last ten cloud the sky, four bring rain, and tests that pass clear it. A usage limit over 80 % brings a storm with distant lightning. Each change comes with a toast.
+- **Travel companions.** Each subagent walks beside the explorer while it works (up to three, then `+N`) and leaves when it finishes. The row shows `⚇ N`.
+- **A logbook pane.** `/bitacora`, the `Bitácora` button or a click on the badge opens a pane beside the conversation: today's milestones, phases, weather and companions grouped by phase, with the time and the context at each, plus a summary of earlier days.
+- **Ambient sound (desktop).** Birds at dawn, wind at midday, crickets at dusk and the campfire at night, with rain and thunder when the weather turns, and short cues when you send, when Claude finishes, asks or fails, and when you camp. The app synthesises it: there are no audio files. Turn it on with the speaker in the session's title bar; turn the mod's sound on or off with `/sonido on|off`, the `♪` button in the row, or the `Sonido ambiental` setting.
+- **An interactive backdrop.** Click the badge to open the logbook, the explorer for the phase and a tip, the sun for the context breakdown, and the camp to camp from 75 % on.
 
-Version 0.5.0.
+Version 0.6.0.
 
 ### Install
 
@@ -39,14 +45,17 @@ Version 0.5.0.
 
 ### Settings
 
-`Modo de color` in the plugin's config menu: `auto` (follows the app), `claro` (light) or `oscuro` (dark).
+In the plugin's config menu:
+
+- `Modo de color`: `auto` (follows the app), `claro` (light) or `oscuro` (dark).
+- `Sonido ambiental`: `activado` (default) or `desactivado`. `/sonido` and the row's `♪` button change it for the session and remember the choice until this setting changes.
 
 ### The row above the prompt
 
 The same row draws in the terminal and in the desktop app:
 
 ```text
-☀ Mediodía ━━━━━━━━━━━◇┄┄┄┄┄┄┄ ▲ 49 % · 154.6k/1M · esperándote   [Detalle] [Ocultar]
+☀ Mediodía ━━•━━━•━━━━◇┄┄┄┄┄┄┄ ▲ 49 % · 154.6k/1M · esperándote ☁ nublado ⚇ 2   [Bitácora] [♪ Sonido] [Detalle] [Ocultar]
 ██████████████████▒▒▒▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ■ System prompt 4.5k  ■ System tools 21.3k  ■ Memory files 8.3k  ■ Messages 105.5k  ▒ Autocompact buffer 33k  ░ Free space 812.4k
 Opus 5.5 · límite 5 h 23 % (reinicia 18:00) · límite 7 días 41 % · autocompacta a 967k · ≈ US$ 3.20 (estimado)
@@ -56,7 +65,7 @@ The bar and the legend are `/context`'s breakdown, each category in the colour `
 
 ### Behaviour in the terminal (CLI)
 
-The terminal draws no backdrop or colors, so the mod there is the row above the prompt — a miniature road where `━` is the ground covered, `◆` the explorer walking, `◇` the explorer waiting for you and `▲` the camp — plus the status line, the phase toasts and both commands. The `Ocultar` button hides the row until the next `/rogue-road`.
+The terminal draws no backdrop or colors, so the mod there is the row above the prompt — a miniature road where `━` is the ground covered, `◆` the explorer walking, `◇` the explorer waiting for you and `▲` the camp — plus the status line, the phase and weather toasts, the logbook pane (opened with `/bitacora`) and the commands. The terminal plays no sound. The `Ocultar` button hides the row until the next `/rogue-road`.
 
 ### Requirements
 
@@ -78,7 +87,16 @@ El explorador solo camina mientras Claude trabaja. Cuando Claude te necesita (te
 
 El explorador vive en una viñeta en la esquina inferior izquierda: camina en el lugar con el mundo desplazándose detrás mientras Claude trabaja, y se detiene a esperarte cuando Claude te necesita. La luz, las sombras, la bruma, los pájaros, las luciérnagas y la fogata siguen la hora del día.
 
-Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y navy (oscuro) del brand con un acento que sigue la hora del día, estilos de mensaje, una banda sobre el prompt con un camino en miniatura que también funciona en la terminal, una entrada en la línea de estado, avisos al cambiar de fase y los comandos `/rogue-road` y `/acampar`. La instalación, los ajustes y los requisitos están en la sección en inglés.
+Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y navy (oscuro) del brand con un acento que sigue la hora del día, estilos de mensaje, una banda sobre el prompt con un camino en miniatura que también funciona en la terminal, una entrada en la línea de estado, avisos al cambiar de fase y los comandos `/rogue-road` y `/acampar`. Desde la 0.6.0 el viaje también cuenta lo que pasa en la sesión:
+
+- **Hitos en el camino:** cada commit, push, PR o ejecución de tests que pasa deja un banderín donde ocurrió (naranja, verde, violeta o crema). En la banda se ven como `•`.
+- **Clima:** dos herramientas fallidas de las últimas diez nublan el cielo, cuatro traen lluvia y los tests en verde lo despejan. Un límite de uso sobre el 80 % trae tormenta.
+- **Compañeros de viaje:** cada subagente camina junto al explorador mientras trabaja y se va al terminar.
+- **Bitácora:** `/bitacora`, el botón `Bitácora` o un clic en la insignia abren un panel con los hitos, fases, clima y compañeros del día, agrupados por fase, y un resumen de los días anteriores.
+- **Sonido ambiental (escritorio):** pájaros al alba, viento al mediodía, grillos al atardecer y la fogata de noche, más lluvia y truenos según el clima, y señales breves al enviar, terminar, preguntar, fallar y acampar. Se activa con el parlante de la barra de título; el sonido del mod se habilita o deshabilita con `/sonido on|off`, el botón `♪` de la banda o el ajuste `Sonido ambiental`.
+- **Fondo interactivo:** un clic en la insignia abre la bitácora, en el explorador muestra la fase y un consejo, en el sol el desglose del contexto y en el campamento acampa (desde el 75 %).
+
+La instalación, los ajustes y los requisitos están en la sección en inglés.
 
 ## License
 

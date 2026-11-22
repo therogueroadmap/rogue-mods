@@ -8,6 +8,16 @@
                               
                                               
                                        
+                                                                     
+
+/** Un hito del viaje sobre el camino: dónde (en % de contexto), de qué tipo y qué fue. */
+                                                                        
+
+/** El color del banderín de cada tipo de hito. */
+export const MARK_COLORS                      = { commit: '#F7792C', tests: '#4CC38A', pr: '#9D8CF2', push: '#FCF3E1' }
+
+/** Cuántos hitos dibuja la escena como mucho: los más recientes. */
+export const MAX_MARKS = 24
 
 /** Paleta del brand de The Rogue Roadmap. */
 export const BRAND = { navy: '#0A1B35', orange: '#F7792C', cream: '#FCF3E1' }         
@@ -360,20 +370,34 @@ const nearThings = ()         => {
 const FAR_PINES = farPines()
 const NEAR_THINGS = nearThings()
 
-const vignette = (pace      , shadowLen        , shadowDir        , shadowAlpha        , fireflies        )         => `<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMax meet" overflow="visible">
+// Los compañeros (subagentes) caminan junto al viajero: uno detrás y dos delante.
+const MATE_X = [72, 228, 286]
+
+const mates = (pace      , count        )         => {
+  const shown = Math.min(count, MATE_X.length)
+  const figures = MATE_X.slice(0, shown)
+    .map((x, k) => `<g transform="translate(${x} ${VG_GROUND}) scale(1.08)"><g class="companion c${k} ${pace}">${ROGUE}</g></g>`)
+    .join('')
+  const more = count > shown ? `<text class="mate-more" x="318" y="${VG_GROUND - 118}">+${count - shown}</text>` : ''
+
+  return figures + more
+}
+
+const vignette = (pace      , shadowLen        , shadowDir        , shadowAlpha        , fireflies        , companions = 0)         => `<svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMax meet" overflow="visible">
 <g class="vignette ${pace}" mask="url(#rrVgMask)">
 <path class="vg-ground" d="M-60 900V${VG_GROUND - 4}Q140 ${VG_GROUND - 22} 520 ${VG_GROUND}V900Z"/>
 <g class="vg-scroll vg-far">${`<path class="vg-pines" d="${FAR_PINES}"/>`}</g>
 <path class="vg-path" d="M-60 ${VG_GROUND + 6}H460"/>
 <g class="vg-scroll vg-near">${NEAR_THINGS}</g>
 <ellipse class="vg-shadow" cx="${r1(150 + (shadowDir * shadowLen) / 2)}" cy="${VG_GROUND + 2}" rx="${r1(shadowLen / 2 + 14)}" ry="6" opacity="${shadowAlpha.toFixed(2)}"/>
+${mates(pace, companions)}
 <g transform="translate(150 ${VG_GROUND}) scale(1.35)"><g class="${pace}">${ROGUE}</g></g>
 <g opacity="${fireflies.toFixed(2)}">${[[60, 760], [250, 720], [320, 800], [110, 690], [380, 740]].map(([x, y], i) => `<circle class="firefly" cx="${x}" cy="${y}" r="2.6" style="animation-delay: -${i * 1.7}s"/>`).join('')}</g>
 </g>
 </svg>`
 
-const LIGHT_EXTRA = `--staff: ${BRAND.navy}; --boot: #5A3A26;`
-const DARK_EXTRA = '--staff: #A7B0C2; --boot: #8A5A3C;'
+const LIGHT_EXTRA = `--staff: ${BRAND.navy}; --boot: #5A3A26; --mate: #3B4D66;`
+const DARK_EXTRA = '--staff: #A7B0C2; --boot: #8A5A3C; --mate: #6F7A90;'
 
                           
                         
@@ -381,7 +405,40 @@ const DARK_EXTRA = '--staff: #A7B0C2; --boot: #8A5A3C;'
             
                                                                          
                 
+                                                                
+                     
+                              
+                   
+                                                 
+                     
  
+
+/** Qué hay bajo un clic en el fondo: la insignia, el viajero, el sol o el campamento. */
+                                                                       
+
+/**
+ * La zona de un clic, con `x` e `y` de 0 a 1 sobre el fondo. Aproxima la
+ * escena en una ventana apaisada: la insignia y el viajero en la columna
+ * izquierda, el campamento al final del camino a la derecha, y el sol donde
+ * va según el contexto.
+ */
+export const zoneAt = (x        , y        , percent        )       => {
+  const sun = sunAt(percent)
+  if (x < 0.22 && y < 0.24) {
+    return 'insignia'
+  }
+  if (x < 0.24 && y > 0.66) {
+    return 'viajero'
+  }
+  if (Math.abs(x - sun.x / W) < 0.08 && Math.abs(y - (sun.y / 520) * 0.64) < 0.1) {
+    return 'sol'
+  }
+  if (x > 0.84 && y > 0.42 && y < 0.78) {
+    return 'campamento'
+  }
+
+  return null
+}
 
 /** Lo más largo que puede ser el SVG de un fondo: la app de escritorio no dibuja nada pasado 131 072 caracteres. */
 export const MAX_SVG = 126_000
@@ -415,7 +472,46 @@ const badge = (p        , pace      , label        )         => {
 </svg>`
 }
 
-const compose = ({ percent, pace, mode, label = '' }            , lite         )         => {
+/** Cuánto oscurece el cielo y cuántas nubes de lluvia trae cada clima. */
+const GLOOM                          = { despejado: 0, nublado: 0.14, lluvia: 0.24, tormenta: 0.34 }
+const STORM_CLOUDS                             = [
+  [140, 120, 1.3], [760, 70, 1.6], [1240, 130, 1.4], [460, 170, 1.1], [1020, 190, 1.2], [1420, 80, 1.0],
+]
+const CLOUD_D = 'h180 a26 26 0 0 0 -36 -30 a40 40 0 0 0 -74 -10 a28 28 0 0 0 -70 40 Z'
+
+const weatherSky = (w         )         => {
+  const n = w === 'despejado' ? 0 : w === 'nublado' ? 3 : w === 'lluvia' ? 5 : 6
+  const clouds = STORM_CLOUDS.slice(0, n)
+    .map(([x, y, k]) => `<path class="storm-cloud" transform="translate(${x} ${y}) scale(${k})" d="M0 0 ${CLOUD_D}"/>`)
+    .join('')
+  const bolt = w === 'tormenta' ? '<path class="bolt" d="M1300 170 L1284 232 L1300 230 L1280 300"/>' : ''
+
+  return n === 0 ? '' : `<!-- clima: nubes de lluvia -->\n<g class="storm">${clouds}${bolt}</g>`
+}
+
+const weatherVeil = (w         )         => {
+  if (w === 'despejado') {
+    return ''
+  }
+  const rain = w === 'lluvia' || w === 'tormenta' ? `<g class="rain"><rect y="-80" width="100%" height="120%" fill="url(#rrRain)"/></g>` : ''
+  const flash = w === 'tormenta' ? '<rect class="flash" width="100%" height="100%"/>' : ''
+
+  return `<!-- clima: el cielo se cubre, llueve o relampaguea -->\n<rect class="gloom" width="100%" height="100%" opacity="${GLOOM[w].toFixed(2)}"/>${rain}${flash}`
+}
+
+const marksOf = (marks             )         =>
+  marks
+    .slice(-MAX_MARKS)
+    .map((m, i) => {
+      const [mx, my] = roadPoint(0.03 + 0.94 * (clamp(m.percent, 0, 100) / 100))
+      const lean = i % 2 === 0 ? 0 : 6
+      const color = MARK_COLORS[m.kind] ?? BRAND.cream
+
+      return `<g class="mark" transform="translate(${r1(mx + lean)} ${r1(my)})"><title>${escape(m.label.slice(0, 80))}</title><line class="mark-pole" x1="0" y1="0" x2="0" y2="-24"/><path d="M0 -24 L12 -20 L0 -16 Z" fill="${color}"/><circle class="mark-foot" r="2.6"/></g>`
+    })
+    .join('')
+
+const compose = ({ percent, pace, mode, label = '', marks = [], weather = 'despejado', companions = 0 }            , lite         )         => {
   const p = percent ?? 0
   const day = skyAt(p)
   const night = nightOf(day)
@@ -521,6 +617,20 @@ ${ROGUE_STYLE}
 .badge-title { fill: ${BRAND.cream}; font: 600 18px Outfit, ui-sans-serif, system-ui, sans-serif }
 .badge-detail { fill: ${BRAND.cream}; fill-opacity: 0.82; font: 400 13px Outfit, ui-sans-serif, system-ui, sans-serif }
 .badge .bubble, .badge .dust, .badge .lamp-glow { display: none }
+.mark-pole { stroke: var(--figure); stroke-width: 2; stroke-linecap: round } .mark-foot { fill: var(--figure) }
+.companion { --figure: var(--mate); opacity: 0.9 }
+.companion .bubble, .companion .lamp-glow { display: none }
+.companion.c0 .pose-walk * { animation-delay: -0.27s } .companion.c1 .pose-walk * { animation-delay: -0.53s } .companion.c2 .pose-walk * { animation-delay: -0.4s }
+.mate-more { fill: var(--figure); font: 600 22px Outfit, ui-sans-serif, system-ui, sans-serif }
+.gloom { fill: #2E3A57 }
+.storm-cloud { fill: #5E6A80; opacity: 0.62 }
+.storm { animation: rr-drift 120s linear infinite alternate }
+.rain { animation: rr-rain 1.4s linear infinite } .rain-drop { stroke: #C9D6E8; stroke-width: 1.4; stroke-linecap: round; opacity: 0.55 }
+.flash { fill: #FCF3E1; opacity: 0; animation: rr-flash 11s linear infinite }
+.bolt { fill: none; stroke: #FCF3E1; stroke-width: 3; stroke-linejoin: round; opacity: 0; animation: rr-flash-bolt 11s linear infinite }
+@keyframes rr-rain { to { transform: translateY(80px) } }
+@keyframes rr-flash { 0%, 93.5%, 96%, 100% { opacity: 0 } 94% { opacity: 0.16 } }
+@keyframes rr-flash-bolt { 0%, 93.5%, 96.5%, 100% { opacity: 0 } 94% { opacity: 0.9 } }
 </style>
 <defs>
 <linearGradient id="rrSky" x1="0" y1="0" x2="0" y2="1">
@@ -539,6 +649,7 @@ ${ROGUE_STYLE}
 <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#FFFFFF"/><stop offset="1" stop-color="#000000"/>
 </linearGradient>
 <mask id="rrVgMask" maskUnits="userSpaceOnUse" x="-80" y="560" width="520" height="360"><rect x="-80" y="560" width="520" height="360" fill="url(#rrVgFade)"/></mask>
+<pattern id="rrRain" width="44" height="80" patternUnits="userSpaceOnUse"><line class="rain-drop" x1="32" y1="4" x2="28" y2="20"/><line class="rain-drop" x1="12" y1="44" x2="8" y2="60"/></pattern>
 <clipPath id="rrBadgeClip"><circle cx="42" cy="42" r="30"/></clipPath>
 <radialGradient id="rrSun"><stop offset="0.3" class="sun-glow" stop-opacity="${glow.toFixed(2)}"/><stop offset="1" class="sun-glow" stop-opacity="0"/></radialGradient>
 </defs>
@@ -558,8 +669,9 @@ ${STARS.map(([x, y], i) => `<circle class="${i % 3 === 0 ? 'star tw' : 'star'}" 
 <path class="cloud" d="M200 150 h140 a22 22 0 0 0 -30 -26 a34 34 0 0 0 -62 -8 a24 24 0 0 0 -48 34 Z"/>
 <path class="cloud" d="M980 96 h180 a26 26 0 0 0 -36 -30 a40 40 0 0 0 -74 -10 a28 28 0 0 0 -70 40 Z"/>
 </g>
+${lite ? '' : weatherSky(weather)}
 <!-- pájaros por la mañana -->
-<g class="birds" opacity="${birds.toFixed(2)}"${lite || birds === 0 ? ' display="none"' : ''}>
+<g class="birds" opacity="${birds.toFixed(2)}"${lite || birds === 0 || weather === 'lluvia' || weather === 'tormenta' ? ' display="none"' : ''}>
 <path class="bird" d="M380 200q7 -7 14 0q7 -7 14 0"/><path class="bird" d="M418 186q6 -6 12 0q6 -6 12 0" style="animation-delay: -0.4s"/><path class="bird" d="M350 214q5 -5 10 0q5 -5 10 0" style="animation-delay: -0.8s"/>
 </g>
 <!-- montañas -->
@@ -574,6 +686,8 @@ ${lite ? '' : `<path class="far" d="${FAR_D}"/><path d="${FAR_D}" fill="url(#rrL
 <path class="road-ahead" d="${ROAD_D}"/>
 <path class="road-done" d="${ROAD_D}" pathLength="100" stroke-dasharray="${r1(f * 100)} 200"/>
 ${lite ? '' : milestones}
+<!-- hitos reales: commits, tests, pushes y PRs -->
+${lite ? '' : marksOf(marks)}
 <!-- el campamento al final del camino -->
 <g transform="translate(${r1(cx)} ${r1(cy)})"><path class="tent" d="M-16 0 L0 -22 L16 0 Z"/><path class="tent-door" d="M-4 0 L0 -8 L4 0 Z"/><line class="pole thin" x1="0" y1="-22" x2="0" y2="-34"/><path class="flag" d="M0 -34 L10 -31 L0 -28 Z"/></g>
 <!-- la fogata del campamento al anochecer -->
@@ -587,8 +701,9 @@ ${lite ? '' : milestones}
 </svg>
 <!-- bruma: el paisaje se funde con la página bajo la conversación -->
 <rect y="58%" width="100%" height="42%" fill="url(#rrMist)"/>
+${weatherVeil(weather)}
 <!-- el explorador, en la viñeta del costado -->
-${vignette(pace, shadowLen, shadowDir, shadowAlpha, lite ? 0 : fireflies)}
+${vignette(pace, shadowLen, shadowDir, weather === 'despejado' ? shadowAlpha : shadowAlpha * 0.4, lite || weather !== 'despejado' ? 0 : fireflies, companions)}
 <!-- insignia: siempre a la vista en la esquina -->
 ${badge(p, pace, label)}
 </svg>`

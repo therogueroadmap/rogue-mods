@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
 <style>
-svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near: #6B7A7B; --figure: #0A1B35; --face: #FBD9B5; --ground: #F4EAD6; --road: #A9AEA7; --trail: #F7792C; --bubble: #FCF3E1; --staff: #0A1B35; --boot: #5A3A26; }
+svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near: #6B7A7B; --figure: #0A1B35; --face: #FBD9B5; --ground: #F4EAD6; --road: #A9AEA7; --trail: #F7792C; --bubble: #FCF3E1; --staff: #0A1B35; --boot: #5A3A26; --mate: #3B4D66; }
 @keyframes rr-step-a { 0%, 100% { transform: rotate(22deg) } 50% { transform: rotate(-22deg) } }
 @keyframes rr-step-b { 0%, 100% { transform: rotate(-22deg) } 50% { transform: rotate(22deg) } }
 @keyframes rr-dust { 0% { opacity: 0.5; transform: translateX(0) } 100% { opacity: 0; transform: translateX(-10px) } }
@@ -87,6 +87,20 @@ svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near
 .badge-title { fill: #FCF3E1; font: 600 18px Outfit, ui-sans-serif, system-ui, sans-serif }
 .badge-detail { fill: #FCF3E1; fill-opacity: 0.82; font: 400 13px Outfit, ui-sans-serif, system-ui, sans-serif }
 .badge .bubble, .badge .dust, .badge .lamp-glow { display: none }
+.mark-pole { stroke: var(--figure); stroke-width: 2; stroke-linecap: round } .mark-foot { fill: var(--figure) }
+.companion { --figure: var(--mate); opacity: 0.9 }
+.companion .bubble, .companion .lamp-glow { display: none }
+.companion.c0 .pose-walk * { animation-delay: -0.27s } .companion.c1 .pose-walk * { animation-delay: -0.53s } .companion.c2 .pose-walk * { animation-delay: -0.4s }
+.mate-more { fill: var(--figure); font: 600 22px Outfit, ui-sans-serif, system-ui, sans-serif }
+.gloom { fill: #2E3A57 }
+.storm-cloud { fill: #5E6A80; opacity: 0.62 }
+.storm { animation: rr-drift 120s linear infinite alternate }
+.rain { animation: rr-rain 1.4s linear infinite } .rain-drop { stroke: #C9D6E8; stroke-width: 1.4; stroke-linecap: round; opacity: 0.55 }
+.flash { fill: #FCF3E1; opacity: 0; animation: rr-flash 11s linear infinite }
+.bolt { fill: none; stroke: #FCF3E1; stroke-width: 3; stroke-linejoin: round; opacity: 0; animation: rr-flash-bolt 11s linear infinite }
+@keyframes rr-rain { to { transform: translateY(80px) } }
+@keyframes rr-flash { 0%, 93.5%, 96%, 100% { opacity: 0 } 94% { opacity: 0.16 } }
+@keyframes rr-flash-bolt { 0%, 93.5%, 96.5%, 100% { opacity: 0 } 94% { opacity: 0.9 } }
 </style>
 <defs>
 <linearGradient id="rrSky" x1="0" y1="0" x2="0" y2="1">
@@ -105,6 +119,7 @@ svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near
 <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#FFFFFF"/><stop offset="1" stop-color="#000000"/>
 </linearGradient>
 <mask id="rrVgMask" maskUnits="userSpaceOnUse" x="-80" y="560" width="520" height="360"><rect x="-80" y="560" width="520" height="360" fill="url(#rrVgFade)"/></mask>
+<pattern id="rrRain" width="44" height="80" patternUnits="userSpaceOnUse"><line class="rain-drop" x1="32" y1="4" x2="28" y2="20"/><line class="rain-drop" x1="12" y1="44" x2="8" y2="60"/></pattern>
 <clipPath id="rrBadgeClip"><circle cx="42" cy="42" r="30"/></clipPath>
 <radialGradient id="rrSun"><stop offset="0.3" class="sun-glow" stop-opacity="0.51"/><stop offset="1" class="sun-glow" stop-opacity="0"/></radialGradient>
 </defs>
@@ -124,6 +139,7 @@ svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near
 <path class="cloud" d="M200 150 h140 a22 22 0 0 0 -30 -26 a34 34 0 0 0 -62 -8 a24 24 0 0 0 -48 34 Z"/>
 <path class="cloud" d="M980 96 h180 a26 26 0 0 0 -36 -30 a40 40 0 0 0 -74 -10 a28 28 0 0 0 -70 40 Z"/>
 </g>
+
 <!-- pájaros por la mañana -->
 <g class="birds" opacity="0.00" display="none">
 <path class="bird" d="M380 200q7 -7 14 0q7 -7 14 0"/><path class="bird" d="M418 186q6 -6 12 0q6 -6 12 0" style="animation-delay: -0.4s"/><path class="bird" d="M350 214q5 -5 10 0q5 -5 10 0" style="animation-delay: -0.8s"/>
@@ -140,6 +156,8 @@ svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near
 <path class="road-ahead" d="M30 492 L34.7 491.7 L44.1 491 L58.1 489.9 L76.9 488.6 L100.3 486.8 L128.4 484.8 L161.3 482.4 L198.8 479.6 L227.5 476.8 L247.5 473.8 L258.8 470.6 L261.3 467.4 L255 464 L240 460.5 L216.3 456.9 L183.8 453.1 L160 449.4 L145 445.6 L138.8 441.9 L141.3 438.1 L152.5 434.4 L172.5 430.6 L201.3 426.9 L238.8 423.1 L267.7 419.4 L288 415.8 L299.7 412.3 L302.8 408.8 L297.3 405.3 L283.3 401.9 L260.6 398.6 L229.4 395.4 L206.7 392.2 L192.7 389.1 L187.2 386 L190.3 383 L202 380.1 L222.3 377.2 L251.3 374.4 L288.8 371.6 L323.1 369 L354.4 366.6 L382.5 364.3 L407.5 362.2 L429.4 360.2 L448.1 358.4 L463.8 356.8 L476.3 355.3 L489.7 353.8 L504.1 352.5 L519.4 351.3 L535.6 350.2 L552.8 349.2 L570.9 348.2 L590 347.4 L610 346.6 L629.4 345.9 L648.1 345.3 L666.3 344.8 L683.8 344.3 L700.6 343.8 L716.9 343.4 L732.5 343.1 L747.5 342.9 L762.5 342.7 L777.5 342.6 L792.5 342.5 L807.5 342.5 L822.5 342.6 L837.5 342.7 L852.5 342.9 L867.5 343.1 L883.1 343.4 L899.4 343.8 L916.3 344.3 L933.8 344.8 L951.9 345.3 L970.6 345.9 L990 346.6 L1010 347.4 L1029.1 348.2 L1047.2 349.2 L1064.4 350.2 L1080.6 351.3 L1095.9 352.5 L1110.3 353.8 L1123.8 355.3 L1136.3 356.8 L1151.9 358.4 L1170.6 360.2 L1192.5 362.2 L1217.5 364.3 L1245.6 366.6 L1276.9 369 L1311.3 371.6 L1348.8 374.4 L1377.7 377.2 L1398 380.1 L1409.7 383 L1412.8 386 L1407.3 389.1 L1393.3 392.2 L1370.6 395.4 L1339.4 398.6 L1316.7 401.9 L1302.7 405.3 L1297.2 408.8 L1300.3 412.3 L1312 415.8 L1332.3 419.4 L1361.3 423.1 L1398.8 426.9 L1427.5 430.6 L1447.5 434.4 L1458.8 438.1 L1461.3 441.9 L1455 445.6 L1440 449.4 L1416.3 453.1 L1383.8 456.9 L1360 460.5 L1345 464 L1338.8 467.4 L1341.3 470.6 L1352.5 473.8 L1372.5 476.8 L1401.3 479.6 L1438.8 482.4 L1471.6 484.8 L1499.7 486.8 L1523.1 488.6 L1541.9 489.9 L1555.9 491 L1565.3 491.7 L1570 492"/>
 <path class="road-done" d="M30 492 L34.7 491.7 L44.1 491 L58.1 489.9 L76.9 488.6 L100.3 486.8 L128.4 484.8 L161.3 482.4 L198.8 479.6 L227.5 476.8 L247.5 473.8 L258.8 470.6 L261.3 467.4 L255 464 L240 460.5 L216.3 456.9 L183.8 453.1 L160 449.4 L145 445.6 L138.8 441.9 L141.3 438.1 L152.5 434.4 L172.5 430.6 L201.3 426.9 L238.8 423.1 L267.7 419.4 L288 415.8 L299.7 412.3 L302.8 408.8 L297.3 405.3 L283.3 401.9 L260.6 398.6 L229.4 395.4 L206.7 392.2 L192.7 389.1 L187.2 386 L190.3 383 L202 380.1 L222.3 377.2 L251.3 374.4 L288.8 371.6 L323.1 369 L354.4 366.6 L382.5 364.3 L407.5 362.2 L429.4 360.2 L448.1 358.4 L463.8 356.8 L476.3 355.3 L489.7 353.8 L504.1 352.5 L519.4 351.3 L535.6 350.2 L552.8 349.2 L570.9 348.2 L590 347.4 L610 346.6 L629.4 345.9 L648.1 345.3 L666.3 344.8 L683.8 344.3 L700.6 343.8 L716.9 343.4 L732.5 343.1 L747.5 342.9 L762.5 342.7 L777.5 342.6 L792.5 342.5 L807.5 342.5 L822.5 342.6 L837.5 342.7 L852.5 342.9 L867.5 343.1 L883.1 343.4 L899.4 343.8 L916.3 344.3 L933.8 344.8 L951.9 345.3 L970.6 345.9 L990 346.6 L1010 347.4 L1029.1 348.2 L1047.2 349.2 L1064.4 350.2 L1080.6 351.3 L1095.9 352.5 L1110.3 353.8 L1123.8 355.3 L1136.3 356.8 L1151.9 358.4 L1170.6 360.2 L1192.5 362.2 L1217.5 364.3 L1245.6 366.6 L1276.9 369 L1311.3 371.6 L1348.8 374.4 L1377.7 377.2 L1398 380.1 L1409.7 383 L1412.8 386 L1407.3 389.1 L1393.3 392.2 L1370.6 395.4 L1339.4 398.6 L1316.7 401.9 L1302.7 405.3 L1297.2 408.8 L1300.3 412.3 L1312 415.8 L1332.3 419.4 L1361.3 423.1 L1398.8 426.9 L1427.5 430.6 L1447.5 434.4 L1458.8 438.1 L1461.3 441.9 L1455 445.6 L1440 449.4 L1416.3 453.1 L1383.8 456.9 L1360 460.5 L1345 464 L1338.8 467.4 L1341.3 470.6 L1352.5 473.8 L1372.5 476.8 L1401.3 479.6 L1438.8 482.4 L1471.6 484.8 L1499.7 486.8 L1523.1 488.6 L1541.9 489.9 L1555.9 491 L1565.3 491.7 L1570 492" pathLength="100" stroke-dasharray="64.1 200"/>
 <g transform="translate(207 379.4)"><path class="cairn passed" d="M-7 0 L7 0 L5 -5 L-5 -5 Z M-4 -5 L4 -5 L3 -10 L-3 -10 Z M-2 -10 L2 -10 L0 -14 Z"/></g><g transform="translate(800 342.5)"><path class="cairn passed" d="M-7 0 L7 0 L5 -5 L-5 -5 Z M-4 -5 L4 -5 L3 -10 L-3 -10 Z M-2 -10 L2 -10 L0 -14 Z"/></g><g transform="translate(1393 379.4)"><path class="cairn" d="M-7 0 L7 0 L5 -5 L-5 -5 Z M-4 -5 L4 -5 L3 -10 L-3 -10 Z M-2 -10 L2 -10 L0 -14 Z"/></g>
+<!-- hitos reales: commits, tests, pushes y PRs -->
+
 <!-- el campamento al final del camino -->
 <g transform="translate(1557.4 491.1)"><path class="tent" d="M-16 0 L0 -22 L16 0 Z"/><path class="tent-door" d="M-4 0 L0 -8 L4 0 Z"/><line class="pole thin" x1="0" y1="-22" x2="0" y2="-34"/><path class="flag" d="M0 -34 L10 -31 L0 -28 Z"/></g>
 <!-- la fogata del campamento al anochecer -->
@@ -153,6 +171,7 @@ svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near
 </svg>
 <!-- bruma: el paisaje se funde con la página bajo la conversación -->
 <rect y="58%" width="100%" height="42%" fill="url(#rrMist)"/>
+
 <!-- el explorador, en la viñeta del costado -->
 <svg width="100%" height="100%" viewBox="0 0 1600 900" preserveAspectRatio="xMinYMax meet" overflow="visible">
 <g class="vignette explora" mask="url(#rrVgMask)">
@@ -161,6 +180,7 @@ svg { --top: #5C8FC4; --mid: #C8C6BD; --horizon: #FAC898; --far: #83879A; --near
 <path class="vg-path" d="M-60 852H460"/>
 <g class="vg-scroll vg-near"><path class="vg-stone" d="M31 860a9 5.3999999999999995 0 0 1 18 0ZM204 860a6 3.5999999999999996 0 0 1 12 0ZM318 860a12 7.199999999999999 0 0 1 24 0ZM431 860a9 5.3999999999999995 0 0 1 18 0ZM604 860a6 3.5999999999999996 0 0 1 12 0ZM718 860a12 7.199999999999999 0 0 1 24 0Z"/><path class="vg-grass" d="M90 858l3 -11M94 858l1 -8M97 858l-2 -9M150 858l3 -11M154 858l1 -8M157 858l-2 -9M260 858l3 -11M264 858l1 -8M267 858l-2 -9M300 858l3 -11M304 858l1 -8M307 858l-2 -9M380 858l3 -11M384 858l1 -8M387 858l-2 -9M490 858l3 -11M494 858l1 -8M497 858l-2 -9M550 858l3 -11M554 858l1 -8M557 858l-2 -9M660 858l3 -11M664 858l1 -8M667 858l-2 -9M700 858l3 -11M704 858l1 -8M707 858l-2 -9M780 858l3 -11M784 858l1 -8M787 858l-2 -9"/><g class="post"><rect x="170" y="806" width="4" height="52" rx="1"/><path d="M168 808h30l7 6l-7 6h-30Z"/></g><g class="post"><rect x="570" y="806" width="4" height="52" rx="1"/><path d="M568 808h30l7 6l-7 6h-30Z"/></g></g>
 <ellipse class="vg-shadow" cx="120.5" cy="848" rx="43.5" ry="6" opacity="0.40"/>
+
 <g transform="translate(150 846) scale(1.35)"><g class="explora"><g class="pose-walk">
 <g class="stride stride-b"><path class="limb" d="M3 -46L4 -24L4 -4"/><path class="boot" d="M0 -5H8A3 3 0 0 1 11 -2V0H0Z"/></g>
 <g class="walker"><g transform="translate(0 -8)">

@@ -1,19 +1,19 @@
 # Rogue Road · Ideas para próximas versiones
 
-Ideas propuestas para seguir desarrollando el mod `rogue-road` después de la 0.5.0. Ninguna está implementada todavía. El orden va de mayor a menor impacto estimado. Todas son posibles con la API de mods actual.
+Ideas propuestas para seguir desarrollando el mod `rogue-road` después de la 0.5.0. La 0.6.0 implementó la 1, 2, 3, 5, 6 y 8; quedan pendientes la 4 y la 7. El orden va de mayor a menor impacto estimado. Todas son posibles con la API de mods actual.
 
 **Recomendación para empezar:** la **1 + 4** (hitos y días de viaje), porque le dan sentido al camino más allá del porcentaje. La **7** es la más útil en el día a día.
 
 | # | Idea | Grupo | Superficie | Estado |
 |---|------|-------|------------|--------|
-| 1 | Hitos reales en el camino | El viaje cuenta la sesión | Desktop + CLI | Propuesta (recomendada) |
-| 2 | El clima como estado del trabajo | El viaje cuenta la sesión | Desktop | Propuesta |
-| 3 | Compañeros de viaje (subagentes) | El viaje cuenta la sesión | Desktop + CLI | Propuesta |
+| 1 | Hitos reales en el camino | El viaje cuenta la sesión | Desktop + CLI | Hecha en 0.6.0 |
+| 2 | El clima como estado del trabajo | El viaje cuenta la sesión | Desktop | Hecha en 0.6.0 |
+| 3 | Compañeros de viaje (subagentes) | El viaje cuenta la sesión | Desktop + CLI | Hecha en 0.6.0 |
 | 4 | Días de viaje persistentes | Continuidad | Desktop + CLI | Propuesta (recomendada) |
-| 5 | Bitácora en un panel lateral | Continuidad | Desktop | Propuesta |
-| 6 | Sonido ambiental por fase | Presencia | Desktop | Propuesta |
+| 5 | Bitácora en un panel lateral | Continuidad | Desktop | Hecha en 0.6.0 |
+| 6 | Sonido ambiental por fase | Presencia | Desktop | Hecha en 0.6.0 |
 | 7 | Aviso al teléfono si llevas rato sin responder | Presencia | Desktop + CLI | Propuesta (más práctica) |
-| 8 | Fondo interactivo | Presencia | Desktop | Propuesta |
+| 8 | Fondo interactivo | Presencia | Desktop | Hecha en 0.6.0 |
 
 ---
 

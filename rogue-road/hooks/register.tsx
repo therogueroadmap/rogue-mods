@@ -1,10 +1,11 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
+import type { EngineInterface, Register, ThemeResult, ThemeSetArgs } from 'claude-code'
 
-import type { Ledger, LedgerRow, Pace, Trail } from '../types'
+import type { Companion, Entry, EntryKind, Ledger, LedgerRow, MarkKind, Pace, Trail, Weather } from '../types'
 import { makeColors } from './make-colors.js'
-import { BRAND, scene } from './scene'
+import { BRAND, MARK_COLORS, MAX_MARKS, scene, zoneAt } from './scene'
 import type { Hex, Mode } from './scene'
+import { soundOf } from './sound'
 
 // ─── Las seis fases del día ──────────────────────────────────────────
 // La exploración empieza al alba con el contexto vacío; cada respuesta
@@ -99,8 +100,9 @@ const themes = PHASES.map(ph => {
 
 // ─── El tema completo de una fase ────────────────────────────────────
 
-const look = (i: number, mode: Mode): ThemeSetArgs => ({
+const look = (i: number, mode: Mode, weather: Weather, isSoundOn: boolean): ThemeSetArgs => ({
   colors: themes[Math.max(0, Math.min(LAST, i))]?.theme,
+  ...(isSoundOn ? { sound: soundOf(Math.max(0, Math.min(LAST, i)), weather) } : {}),
   ...(mode === 'auto' ? {} : { overrideColorScheme: mode === 'claro' ? ('light' as const) : ('dark' as const) }),
   backdrop: { scene: `fase-${i + 1}-${mode}`, glass: { blur: 16, opacity: 0.7 } },
   style: {
@@ -118,30 +120,49 @@ const statusOf = (trail: Trail, pace: Pace): string => {
   return `${ph.icon} ${ph.name}${pct} · ${pace === 'explora' ? 'explorando' : 'esperándote'}`
 }
 
-// El tema se pinta una vez por fase y por carga del módulo: si el mod se carga
-// a mitad de sesión, o la app se conecta después, el primer evento lo pinta.
-let paintedPhase = -1
+// El tema se pinta una vez por fase (y por clima, si suena) y por carga del
+// módulo: si el mod se carga a mitad de sesión, o la app se conecta después,
+// el primer evento lo pinta.
+let paintedKey = ''
 let lastDraw = 'sin pintar aún'
+let soundNote = ''
 
-async function applyPhase($: EngineInterface, i: number, mode: Mode): Promise<void> {
-  const set = await $.theme.set(look(i, mode)).catch(async (error: unknown) => {
+/** Pinta el tema; si la app no acepta el sonido o el estilo, lo pinta sin ellos. */
+async function setLook($: EngineInterface, args: ThemeSetArgs): Promise<ThemeResult> {
+  try {
+    const set = await $.theme.set(args)
+    soundNote = args.sound === undefined ? 'sonido apagado' : 'sonido listo (actívalo con el parlante de la barra de título)'
+
+    return set
+  } catch (error) {
+    $.ui.log(`rogue-road: ${String(error)}`)
+  }
+  const { sound: _sound, ...silent } = args
+  soundNote = args.sound === undefined ? 'sonido apagado' : 'la app no aceptó el sonido'
+  try {
+    return await $.theme.set(silent)
+  } catch (error) {
     // Una versión que no acepta `style`: el tema sin estilos de mensaje.
-    $.ui.log(String(error))
-    const { style: _style, ...plain } = look(i, mode)
+    $.ui.log(`rogue-road: ${String(error)}`)
+    const { style: _style, ...plain } = silent
 
     return $.theme.set(plain)
-  })
-  paintedPhase = set.isDrawn ? i : -1
-  lastDraw = set.isDrawn ? 'pintado' : `no pintado: ${set.reason ?? 'sin motivo'}`
-  if (!set.isDrawn) {
-    $.ui.log(`rogue-road: ${lastDraw}`)
   }
 }
 
-async function ensurePainted($: EngineInterface, mode: Mode): Promise<void> {
+async function paint($: EngineInterface, mode: Mode, isForced = false): Promise<void> {
   const { phase } = await read($, trail)
-  if (paintedPhase !== phase) {
-    await applyPhase($, phase, mode)
+  const w = await read($, weather)
+  const isSound = await read($, isSoundOn)
+  const key = `${phase}|${isSound ? w : '-'}|${isSound}`
+  if (!isForced && key === paintedKey) {
+    return
+  }
+  const set = await setLook($, look(phase, mode, w, isSound))
+  paintedKey = set.isDrawn ? key : ''
+  lastDraw = set.isDrawn ? 'pintado' : `no pintado: ${set.reason ?? 'sin motivo'}`
+  if (!set.isDrawn) {
+    $.ui.log(`rogue-road: ${lastDraw}`)
   }
 }
 
@@ -151,17 +172,22 @@ const CAMP_FOCUS = 'Conserva el rumbo: objetivos, decisiones tomadas, archivos t
 const CAMP_TEXT = '⛺ Acampando: la conversación se compacta en cuanto Claude queda libre. Mañana amanece de nuevo.'
 
 function camp($: EngineInterface): void {
+  void addEntry($, 'acampada', 'Acampa: la conversación se compacta')
   $.command.run({ command: 'compact', args: CAMP_FOCUS }).catch((error: unknown) => {
     $.ui.log(`rogue-road: no se pudo acampar: ${String(error)}`)
     $.ui.toast('No se pudo acampar. Usa /compact directamente.')
   })
 }
 
-/** Camino en miniatura para la terminal: recorrido, explorador, por recorrer y campamento. */
-const miniRoad = (percent: number | null, pace: Pace, cells = 18): { done: string; rogue: string; ahead: string } => {
-  const at = Math.round((Math.min(percent ?? 0, 100) / 100) * (cells - 1))
+/** Camino en miniatura para la terminal: recorrido (• en cada hito), explorador, por recorrer y campamento. */
+const miniRoad = (percent: number | null, pace: Pace, cells = 18, marks: number[] = []): { done: string; rogue: string; ahead: string } => {
+  const cellOf = (p: number): number => Math.round((Math.min(Math.max(p, 0), 100) / 100) * (cells - 1))
+  const at = cellOf(percent ?? 0)
+  // Un hito recién hecho queda justo detrás del explorador.
+  const marked = new Set(marks.map(p => Math.min(cellOf(p), at - 1)))
+  const done = Array.from({ length: at }, (_, k) => (marked.has(k) ? '•' : '━')).join('')
 
-  return { done: '━'.repeat(at), rogue: pace === 'explora' ? '◆' : '◇', ahead: '┄'.repeat(cells - 1 - at) }
+  return { done, rogue: pace === 'explora' ? '◆' : '◇', ahead: '┄'.repeat(cells - 1 - at) }
 }
 
 // ─── Estado ──────────────────────────────────────────────────────────
@@ -172,6 +198,163 @@ const isBandHidden = atom({ plugin: 'rogue-road', key: 'isBandHidden' } as const
 const isCampPending = atom({ plugin: 'rogue-road', key: 'isCampPending' } as const, false)
 const ledger = atom({ plugin: 'rogue-road', key: 'ledger' } as const, null as Ledger | null)
 const isDetailed = atom({ plugin: 'rogue-road', key: 'isDetailed' } as const, true)
+const journal = atom({ plugin: 'rogue-road', key: 'journal' } as const, [] as Entry[])
+const weather = atom({ plugin: 'rogue-road', key: 'weather' } as const, 'despejado' as Weather)
+const recent = atom({ plugin: 'rogue-road', key: 'recent' } as const, [] as boolean[])
+const companions = atom({ plugin: 'rogue-road', key: 'companions' } as const, [] as Companion[])
+const isSoundOn = atom({ plugin: 'rogue-road', key: 'isSoundOn' } as const, true)
+
+// ─── La bitácora: hitos, fases, clima y compañeros ───────────────────
+
+const JOURNAL_MAX = 300
+const MARK_KINDS: readonly string[] = ['commit', 'tests', 'pr', 'push']
+
+async function addEntry($: EngineInterface, kind: EntryKind, label: string): Promise<void> {
+  const { percent } = await read($, trail)
+  const entry: Entry = { at: Date.now(), percent: percent ?? 0, kind, label }
+  await update($, journal, list => [...list, entry].slice(-JOURNAL_MAX))
+}
+
+/** Las entradas desde el último amanecer: el día de viaje en curso. */
+const today = (list: Entry[]): Entry[] => {
+  let from = 0
+  list.forEach((x, k) => {
+    if (x.kind === 'amanecer') {
+      from = k + 1
+    }
+  })
+
+  return list.slice(from)
+}
+
+const marksOf = (list: Entry[]): { percent: number; kind: string; label: string }[] =>
+  today(list)
+    .filter(x => MARK_KINDS.includes(x.kind))
+    .slice(-MAX_MARKS)
+    .map(x => ({ percent: x.percent, kind: x.kind, label: x.label }))
+
+const TEST_RE = /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test\b|\bpytest\b|\bvitest\b|\bjest\b|\bcargo\s+test\b|\bgo\s+test\b|\bmake\s+test\b|\bclaude\s+plugin\s+test\b|\bphpunit\b|\brspec\b/
+
+const text = (v: unknown): string => (typeof v === 'string' ? v : '')
+
+/** Reconoce un hito en una herramienta que terminó bien: commit, push, PR o tests. */
+export const milestoneOf = (tool: string, input: unknown, response: unknown): { kind: MarkKind; label: string } | null => {
+  const args = (input ?? {}) as Record<string, unknown>
+  if (tool === 'Bash') {
+    const cmd = text(args['command'])
+    const out = typeof response === 'object' && response !== null ? text((response as Record<string, unknown>)['stdout']) : text(response)
+    if (/\bgit\s+commit\b/.test(cmd)) {
+      const subject = /^\[[^\]]+\]\s+(.+)$/m.exec(out)?.[1] ?? /\s-m\s+["']([^"'$\n]+)/.exec(cmd)?.[1] ?? 'commit'
+
+      return { kind: 'commit', label: subject.trim().slice(0, 80) }
+    }
+    if (/\bgh\s+pr\s+create\b/.test(cmd)) {
+      return { kind: 'pr', label: /https:\/\/\S+\/pull\/\d+/.exec(out)?.[0] ?? 'PR abierto' }
+    }
+    if (/\bgit\s+push\b/.test(cmd)) {
+      return { kind: 'push', label: `push ${/\bgit\s+push\s+(?:-\S+\s+)*(\S+\s+\S+)/.exec(cmd)?.[1] ?? ''}`.trim() }
+    }
+    if (TEST_RE.test(cmd)) {
+      return { kind: 'tests', label: `tests: ${cmd.slice(0, 60)}` }
+    }
+  }
+  if (/create_pull_request$/.test(tool)) {
+    return { kind: 'pr', label: text(args['title']) || 'PR abierto' }
+  }
+
+  return null
+}
+
+const MARK_TEXT: Record<MarkKind, string> = { commit: 'commit', tests: 'tests en verde', pr: 'PR', push: 'push' }
+
+// ─── El clima: sigue a los fallos de las herramientas y a los límites ─
+
+type Sky = { name: string; icon: string; toast: string }
+const WEATHER: Record<Weather, Sky> = {
+  despejado: { name: 'despejado', icon: '☼', toast: '☼ Se despeja: las herramientas vuelven a responder.' },
+  nublado: { name: 'nublado', icon: '☁', toast: '☁ Se nubla: un par de herramientas fallaron.' },
+  lluvia: { name: 'lluvia', icon: '☂', toast: '☂ Llueve: varias herramientas fallaron seguidas. Quizás convenga revisar el rumbo.' },
+  tormenta: { name: 'tormenta', icon: '⛈', toast: '⛈ Tormenta en el horizonte: un límite de uso pasó del 80 %.' },
+}
+const WINDOW = 10
+
+export const weatherOf = (results: boolean[], limits: { percentUsed: number }[]): Weather => {
+  if (limits.some(l => l.percentUsed >= 80)) {
+    return 'tormenta'
+  }
+  const fails = results.filter(ok => !ok).length
+
+  return fails >= 4 ? 'lluvia' : fails >= 2 ? 'nublado' : 'despejado'
+}
+
+async function refreshWeather($: EngineInterface, mode: Mode): Promise<void> {
+  const next = weatherOf(await read($, recent), (await read($, ledger))?.limits ?? [])
+  if (next === (await read($, weather))) {
+    return
+  }
+  await update($, weather, () => next)
+  await addEntry($, 'clima', `${WEATHER[next].icon} ${WEATHER[next].name}`)
+  $.ui.toast(WEATHER[next].toast)
+  await paint($, mode)
+}
+
+/** Anota el resultado de una herramienta: el hito si lo hubo, y el clima. */
+async function recordTool($: EngineInterface, mode: Mode, isOk: boolean, mark: { kind: MarkKind; label: string } | null): Promise<void> {
+  if (mark !== null) {
+    await addEntry($, mark.kind, mark.label)
+  }
+  // Tests en verde despejan el cielo.
+  await update($, recent, list => (mark?.kind === 'tests' ? [] : [...list, isOk].slice(-WINDOW)))
+  await refreshWeather($, mode)
+}
+
+// ─── El sonido: se habilita o deshabilita con /sonido o desde la banda ─
+
+const SOUND_KEY = 'sonido'
+
+async function setSound($: EngineInterface, mode: Mode, config: string, on: boolean): Promise<void> {
+  await update($, isSoundOn, () => on)
+  await $.store.set(SOUND_KEY, { on, config })
+  await paint($, mode, true)
+}
+
+// ─── El panel de la bitácora ─────────────────────────────────────────
+
+const PANE = 'bitacora'
+const PANE_TITLE = 'Bitácora del viaje'
+
+const ENTRY_ICON: Record<EntryKind, string> = {
+  commit: '●', tests: '✓', pr: '⇡', push: '↑', fase: '◐', amanecer: '◓', clima: '~', compañero: '⚇', acampada: '⛺',
+}
+
+const clockOf = (ms: number): string => {
+  const d = new Date(ms)
+
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/** Resumen de un día de viaje: cuántos commits, tests, pushes y PRs. */
+const tally = (list: Entry[]): string => {
+  const n = (k: MarkKind): number => list.filter(x => x.kind === k).length
+  const parts = (['commit', 'tests', 'push', 'pr'] as const).filter(k => n(k) > 0).map(k => `${n(k)} ${MARK_TEXT[k]}`)
+
+  return parts.length === 0 ? 'sin hitos' : parts.join(' · ')
+}
+
+/** Los días anteriores de la bitácora, cada uno cerrado por un amanecer. */
+const pastDays = (list: Entry[]): Entry[][] => {
+  const days: Entry[][] = [[]]
+  for (const x of list) {
+    if (x.kind === 'amanecer') {
+      days.push([])
+    } else {
+      days[days.length - 1]?.push(x)
+    }
+  }
+  days.pop()
+
+  return days
+}
 
 // ─── El libro de ruta: lo que la banda cuenta además del camino ──────
 
@@ -255,6 +438,7 @@ async function setPace($: EngineInterface, next: Pace): Promise<void> {
 
 export const register: Register = (on, options) => {
   const mode = modeOf(options.modo)
+  const soundConfig = options.sonido === 'desactivado' ? 'desactivado' : 'activado'
 
   on('session.start', async ($, e, next) => {
     const unpainted = themes.flatMap(t => t.problems).find(line => line.startsWith("Desktop won't paint"))
@@ -264,14 +448,22 @@ export const register: Register = (on, options) => {
 
     await $.command.register({ name: 'rogue-road', description: 'Muestra en qué punto del camino (y del día) va la sesión' })
     await $.command.register({ name: 'acampar', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
+    await $.command.register({ name: 'bitacora', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
+    await $.command.register({ name: 'sonido', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
+
+    // El sonido: lo último elegido con /sonido, salvo que la opción del mod haya cambiado desde entonces.
+    const stored = (await $.store.get(SOUND_KEY).catch(() => undefined)) as { on?: unknown; config?: unknown } | undefined
+    const isSound = stored?.config === soundConfig && typeof stored.on === 'boolean' ? stored.on : soundConfig === 'activado'
+    await update($, isSoundOn, () => isSound)
 
     const { context } = await $.session.usage()
     const percent = context.percent ?? null
     const phase = phaseOf(percent)
     await update($, trail, () => ({ phase, percent }))
     await update($, pace, () => 'espera' as Pace)
+    await update($, companions, () => [])
     await refreshLedger($).catch(() => undefined)
-    await applyPhase($, phase, mode)
+    await paint($, mode, true)
     $.ui.status(statusOf({ phase, percent }, 'espera'))
 
     return next(e)
@@ -288,9 +480,15 @@ export const register: Register = (on, options) => {
       await update($, trail, () => ({ phase, percent }))
       $.ui.status(statusOf({ phase, percent }, await read($, pace)))
 
-      if (before.phase !== phase || paintedPhase !== phase) {
-        await applyPhase($, phase, mode)
+      if (before.phase !== phase) {
+        const ph = phaseAt(phase)
+        await addEntry($, phase < before.phase ? 'amanecer' : 'fase', phase < before.phase ? `Nuevo amanecer: ${ph.name}` : `Entra en ${ph.name}`)
+        if (phase < before.phase) {
+          // Un nuevo día: el cielo se despeja y los hitos quedan en la bitácora.
+          await update($, recent, () => [])
+        }
       }
+      await paint($, mode)
       if (before.phase !== phase) {
         const ph = phaseAt(phase)
         if (phase < before.phase) {
@@ -304,6 +502,8 @@ export const register: Register = (on, options) => {
         }
       }
     }
+    // Un límite de uso alto trae tormenta.
+    await refreshWeather($, mode)
 
     return next(e)
   })
@@ -311,7 +511,7 @@ export const register: Register = (on, options) => {
   // Una app que se conecta después del inicio recibe el tema.
   on('session.attach', async ($, e, next) => {
     const result = await next(e)
-    await applyPhase($, (await read($, trail)).phase, mode)
+    await paint($, mode, true)
 
     return result
   })
@@ -325,7 +525,7 @@ export const register: Register = (on, options) => {
     const result = await next(e)
     if (e.agentId === undefined) {
       await setPace($, 'explora')
-      await ensurePainted($, mode)
+      await paint($, mode)
     }
 
     return result
@@ -358,14 +558,39 @@ export const register: Register = (on, options) => {
     return next(e)
   }).catch(($, e, next) => next(e))
 
+  // Cada herramienta mueve el clima; un commit, un push, un PR o tests en
+  // verde dejan un hito en el camino.
   on('classic.PostToolUse', async ($, e, next) => {
     await setPace($, 'explora')
+    await recordTool($, mode, true, milestoneOf(e.tool_name, e.tool_input, e.tool_response))
 
     return next(e)
   }).catch(($, e, next) => next(e))
 
   on('classic.PostToolUseFailure', async ($, e, next) => {
     await setPace($, 'explora')
+    if (e.is_interrupt !== true) {
+      await recordTool($, mode, false, null)
+    }
+
+    return next(e)
+  }).catch(($, e, next) => next(e))
+
+  // ─── Compañeros de viaje: los subagentes ───────────────────────────
+
+  on('classic.SubagentStart', async ($, e, next) => {
+    await update($, companions, list => [...list.filter(c => c.id !== e.agent_id), { id: e.agent_id, type: e.agent_type }])
+    await addEntry($, 'compañero', `Se une ${e.agent_type}`)
+
+    return next(e)
+  }).catch(($, e, next) => next(e))
+
+  on('classic.SubagentStop', async ($, e, next) => {
+    const was = (await read($, companions)).some(c => c.id === e.agent_id)
+    await update($, companions, list => list.filter(c => c.id !== e.agent_id))
+    if (was) {
+      await addEntry($, 'compañero', `${e.agent_type} vuelve con lo que encontró`)
+    }
 
     return next(e)
   }).catch(($, e, next) => next(e))
@@ -397,9 +622,48 @@ export const register: Register = (on, options) => {
     const { percent, phase } = await read($, trail)
     const now = await read($, pace)
     const ph = phaseAt(phase)
-    const alt = `${ph.name}: un explorador encapuchado ${now === 'explora' ? 'camina' : 'espera con su farol'} sobre un camino; ${percent ?? 0} % del contexto recorrido`
+    const marks = marksOf(await read($, journal))
+    const w = await read($, weather)
+    const mates = (await read($, companions)).length
+    const alt =
+      `${ph.name}: un explorador encapuchado ${now === 'explora' ? 'camina' : 'espera con su farol'} sobre un camino; ${percent ?? 0} % del contexto recorrido` +
+      `; clima ${WEATHER[w].name}; ${marks.length} hitos en el camino${mates > 0 ? `; ${mates} compañeros` : ''}`
 
-    return <Svg source={scene({ percent, pace: now, mode, label: ph.name })} alt={alt} isInteractive />
+    return <Svg source={scene({ percent, pace: now, mode, label: ph.name, marks, weather: w, companions: mates })} alt={alt} isInteractive />
+  })
+
+  // ─── Fondo interactivo ─────────────────────────────────────────────
+  // Un clic en la insignia abre la bitácora; en el viajero, la fase y un
+  // consejo; en el sol, el desglose del contexto; en el campamento, acampa.
+  on('ui.pointer', async ($, e, next) => {
+    if (!/^fase-\d-/.test(e.scene)) {
+      return next(e)
+    }
+    const { percent, phase } = await read($, trail)
+    const p = percent ?? 0
+    const zone = zoneAt(e.x, e.y, p)
+    if (zone === 'insignia') {
+      await $.ui.open({ id: PANE, title: PANE_TITLE })
+    } else if (zone === 'viajero') {
+      const ph = phaseAt(phase)
+      const w = WEATHER[await read($, weather)]
+      const mates = await read($, companions)
+      $.ui.toast(`${ph.icon} ${ph.name} · ${p} % · ${w.icon} ${w.name}${mates.length > 0 ? ` · ${mates.length} compañeros` : ''}. ${ph.tip}`)
+    } else if (zone === 'sol') {
+      const book = await read($, ledger)
+      const rows = (book?.rows ?? []).filter(r => r.kind === 'used').map(r => `${r.name} ${tokensOf(r.tokens)}`)
+      const fill = book?.tokens === null || book === null ? `${p} %` : `${tokensOf(book.tokens)}/${tokensOf(book.window)}`
+      $.ui.toast(`☀ Contexto ${fill}${rows.length > 0 ? `: ${rows.join(' · ')}` : ''}`)
+    } else if (zone === 'campamento') {
+      if (p >= CAMP_FROM) {
+        camp($)
+        $.ui.toast(CAMP_TEXT)
+      } else {
+        $.ui.toast(`⛺ Aún hay luz (${p} %). El campamento espera al atardecer, desde el ${CAMP_FROM} %.`)
+      }
+    }
+
+    return next(e)
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
@@ -411,7 +675,11 @@ export const register: Register = (on, options) => {
     const book = await read($, ledger)
     const detailed = await read($, isDetailed)
     const ph = phaseAt(phase)
-    const road = miniRoad(percent, now)
+    const marks = marksOf(await read($, journal))
+    const w = await read($, weather)
+    const mates = (await read($, companions)).length
+    const isSound = await read($, isSoundOn)
+    const road = miniRoad(percent, now, 18, marks.map(m => m.percent))
     const width = Math.max(20, Math.min(160, (e.props.bodyColumns ?? 80) - 2))
     const { Box, Button, Text } = $.ui.resolve(e)
     const used = book?.rows.filter(r => r.kind === 'used') ?? []
@@ -441,6 +709,8 @@ export const register: Register = (on, options) => {
             {percent === null ? '—' : `${percent} %`}
             {fill} · {now === 'explora' ? 'explorando' : 'esperándote'}
           </Text>
+          {w !== 'despejado' && <Text color={w === 'tormenta' ? 'warning' : undefined}>{WEATHER[w].icon} {WEATHER[w].name}</Text>}
+          {mates > 0 && <Text dimColor>⚇ {mates}</Text>}
           {(percent ?? 0) >= CAMP_FROM && (
             <Button
               key="acampar"
@@ -451,6 +721,8 @@ export const register: Register = (on, options) => {
               }}
             />
           )}
+          <Button key="bitacora" label="Bitácora" onPress={() => $.ui.open({ id: PANE, title: PANE_TITLE })} />
+          <Button key="sonido" label={isSound ? '♪ Sonido' : '♪ Silencio'} onPress={() => setSound($, mode, soundConfig, !isSound)} />
           <Button key="detalle" label={detailed ? 'Menos' : 'Detalle'} onPress={() => update($, isDetailed, d => !d)} />
           <Button key="ocultar" label="Ocultar" onPress={() => update($, isBandHidden, () => true)} />
         </Box>
@@ -499,10 +771,10 @@ export const register: Register = (on, options) => {
     const phase = phaseOf(percent)
     await update($, trail, () => ({ phase, percent }))
     await update($, isBandHidden, () => false)
-    await applyPhase($, phase, mode)
+    await paint($, mode, true)
     const surfaces = await $.session.surfaces()
     const ph = phaseAt(phase)
-    const road = miniRoad(percent, await read($, pace), 24)
+    const road = miniRoad(percent, await read($, pace), 24, marksOf(await read($, journal)).map(m => m.percent))
     const ladder = PHASES.map((x, k) => {
       const to = PHASES[k + 1]?.from ?? 100
       const range = `${x.from}–${to} %`
@@ -518,7 +790,7 @@ export const register: Register = (on, options) => {
         '',
         ladder,
         '',
-        `Superficies: ${surfaces.length === 0 ? 'ninguna' : surfaces.join(', ')} · fondo ${lastDraw}`,
+        `Superficies: ${surfaces.length === 0 ? 'ninguna' : surfaces.join(', ')} · fondo ${lastDraw} · ${soundNote}`,
       ].join('\n'),
     }
   })
@@ -529,5 +801,98 @@ export const register: Register = (on, options) => {
     await update($, isCampPending, () => true)
 
     return { text: CAMP_TEXT }
+  })
+
+  on('command.run', { command: 'sonido' }, async ($, e) => {
+    const arg = e.args.trim().toLowerCase()
+    const want = /^(on|si|sí|activar|activado|1)$/.test(arg) ? true : /^(off|no|desactivar|desactivado|0)$/.test(arg) ? false : !(await read($, isSoundOn))
+    await setSound($, mode, soundConfig, want)
+
+    return {
+      text: want
+        ? '♪ Sonido habilitado: el camino suena según la fase y el clima. En la app de escritorio, activa también el parlante de la barra de título.'
+        : '♪ Sonido deshabilitado. /sonido on lo vuelve a habilitar.',
+    }
+  })
+
+  on('command.run', { command: 'bitacora' }, async $ => {
+    const opened = await $.ui.open({ id: PANE, title: PANE_TITLE })
+
+    return { text: opened.isPlaced ? 'Bitácora abierta.' : `La bitácora queda lista para abrirse: ${opened.reason}` }
+  })
+
+  // ─── La bitácora, en un panel junto a la conversación ─────────────
+
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    const { Box, Button, Text } = $.ui.resolve(e)
+    const { phase, percent } = await read($, trail)
+    const list = await read($, journal)
+    const w = await read($, weather)
+    const mates = await read($, companions)
+    const ph = phaseAt(phase)
+    const day = today(list)
+    const days = pastDays(list)
+    const room = Math.max(6, (e.viewport?.rows ?? 40) - 10)
+    const shown = day.slice(-room)
+    const colorOf = (x: Entry): string | undefined =>
+      MARK_KINDS.includes(x.kind) ? MARK_COLORS[x.kind] : x.kind === 'fase' || x.kind === 'amanecer' ? phaseAt(phaseOf(x.percent)).accent : undefined
+
+    return (
+      <Box flexDirection="column" gap={1}>
+        <Box flexDirection="column">
+          <Text bold color={ph.accent}>
+            Día {days.length + 1} · {ph.icon} {ph.name} · {percent ?? 0} %
+          </Text>
+          <Text dimColor>
+            {WEATHER[w].icon} {WEATHER[w].name} · {tally(day)}
+          </Text>
+          <Text dimColor>{mates.length === 0 ? 'Viaja solo.' : `⚇ Con ${mates.map(c => c.type).join(', ')}`}</Text>
+        </Box>
+        <Box flexDirection="column">
+          {shown.length === 0 && <Text dimColor>El día recién empieza: todavía no hay nada anotado.</Text>}
+          {shown.map((x, k) => {
+            const head = k === 0 || phaseOf(shown[k - 1]?.percent ?? 0) !== phaseOf(x.percent)
+            const at = phaseAt(phaseOf(x.percent))
+
+            return (
+              <Box key={`${x.at}-${k}`} flexDirection="column">
+                {head && (
+                  <Text bold color={at.accent}>
+                    {at.icon} {at.name}
+                  </Text>
+                )}
+                <Text wrap="truncate">
+                  <Text color={colorOf(x)}>{ENTRY_ICON[x.kind]} </Text>
+                  <Text dimColor>
+                    {clockOf(x.at)} · {x.percent} %{' '}
+                  </Text>
+                  <Text>{MARK_KINDS.includes(x.kind) ? `${MARK_TEXT[x.kind as MarkKind]}: ${x.label}` : x.label}</Text>
+                </Text>
+              </Box>
+            )
+          })}
+        </Box>
+        {days.length > 0 && (
+          <Box flexDirection="column">
+            <Text bold>Días anteriores</Text>
+            {days.slice(-5).map((d, k) => (
+              <Text key={`dia-${k}`} dimColor>
+                Día {days.length - Math.min(5, days.length) + k + 1}: {tally(d)}
+              </Text>
+            ))}
+          </Box>
+        )}
+        {(percent ?? 0) >= CAMP_FROM && (
+          <Button
+            key="acampar-panel"
+            label="⛺ Acampar"
+            onPress={() => {
+              camp($)
+              $.ui.toast(CAMP_TEXT)
+            }}
+          />
+        )}
+      </Box>
+    )
   })
 }

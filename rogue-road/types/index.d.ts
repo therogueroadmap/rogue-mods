@@ -29,6 +29,21 @@ export type Ledger = {
   usd: number | null
 }
 
+/** Un hito real del viaje: un commit, tests que pasan, un push o un PR. */
+export type MarkKind = 'commit' | 'tests' | 'pr' | 'push'
+
+/** El clima sigue al trabajo: fallos seguidos lo nublan, un límite de uso alto trae tormenta. */
+export type Weather = 'despejado' | 'nublado' | 'lluvia' | 'tormenta'
+
+/** Un subagente que acompaña al explorador mientras trabaja. */
+export type Companion = { id: string; type: string }
+
+/** Qué cuenta una línea de la bitácora. */
+export type EntryKind = MarkKind | 'fase' | 'amanecer' | 'clima' | 'compañero' | 'acampada'
+
+/** Una línea de la bitácora: cuándo, en qué punto del camino y qué pasó. */
+export type Entry = { at: number; percent: number; kind: EntryKind; label: string }
+
 declare module 'claude-code' {
   interface PluginState {
     'rogue-road': {
@@ -38,6 +53,11 @@ declare module 'claude-code' {
       isCampPending: boolean
       ledger: Ledger | null
       isDetailed: boolean
+      journal: Entry[]
+      weather: Weather
+      recent: boolean[]
+      companions: Companion[]
+      isSoundOn: boolean
     }
   }
 }

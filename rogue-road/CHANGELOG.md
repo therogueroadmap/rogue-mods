@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-22
+
+### Added
+- Milestones on the road: a commit, a push, a pull request or a test run that passes plants a flag on the road where it happened, with the subject as its title. The row above the prompt marks them with `•`, and a new dawn starts a fresh road.
+- Weather that follows the work: failed tools cloud the sky and bring rain, tests that pass clear it, and a usage limit over 80 % brings a storm with distant lightning. Each change is toasted and logged.
+- Travel companions: each subagent walks beside the explorer while it runs (up to three, then `+N`); the row shows `⚇ N`.
+- A logbook pane (`/bitacora`, the `Bitácora` button, or a click on the badge): the day's milestones, phases, weather and companions grouped by phase, and a summary of earlier days.
+- Ambient sound for the desktop app, by phase and weather, with cues for send, tool, done, ask, error, compact and click. `/sonido on|off`, the row's `♪` button and the new `Sonido ambiental` setting turn it on or off.
+- An interactive backdrop: clicks on the badge, the explorer, the sun and the camp open the logbook, show the phase, show the context breakdown and camp.
+
 ## [0.5.1] - 2026-11-22
 
 ### Fixed
