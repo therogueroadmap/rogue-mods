@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-22
+
+### Added
+- The row above the prompt now carries the session's logbook, in the terminal and in the desktop app alike: the context as tokens used over the window (`154.6k/1M`); a bar the width of the row with each category of `/context` in its own colour, the autocompaction buffer (▒) and the free space (░); a legend with each category's tokens; and a line with the model, the usage limits (5 h, 7 days) with when they reset, the autocompaction threshold and the estimated cost.
+- A `Detalle` / `Menos` button that shows or hides the logbook and keeps the choice.
+
+The breakdown is the local estimate `/context` makes (`summary`): it sends no requests, and it is refreshed after each model response.
+
 ## [0.4.0] - 2026-11-22
 
 ### Changed

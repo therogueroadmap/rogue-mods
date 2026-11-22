@@ -28,7 +28,7 @@ What it adds:
 - A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road` with the details and `/acampar` to compact.
 
-Version 0.4.0.
+Version 0.5.0.
 
 ### Install
 
@@ -40,6 +40,19 @@ Version 0.4.0.
 ### Settings
 
 `Modo de color` in the plugin's config menu: `auto` (follows the app), `claro` (light) or `oscuro` (dark).
+
+### The row above the prompt
+
+The same row draws in the terminal and in the desktop app:
+
+```text
+☀ Mediodía ━━━━━━━━━━━◇┄┄┄┄┄┄┄ ▲ 49 % · 154.6k/1M · esperándote   [Detalle] [Ocultar]
+██████████████████▒▒▒▒░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+■ System prompt 4.5k  ■ System tools 21.3k  ■ Memory files 8.3k  ■ Messages 105.5k  ▒ Autocompact buffer 33k  ░ Free space 812.4k
+Opus 5.5 · límite 5 h 23 % (reinicia 18:00) · límite 7 días 41 % · autocompacta a 967k · ≈ US$ 3.20 (estimado)
+```
+
+The bar and the legend are `/context`'s breakdown, each category in the colour `/context` gives it, estimated locally after each model response (no extra requests). The cost is an estimate, not the bill. `Detalle` / `Menos` shows or hides everything below the first line.
 
 ### Behaviour in the terminal (CLI)
 

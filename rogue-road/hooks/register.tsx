@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
-import type { Pace, Trail } from '../types'
+import type { Ledger, LedgerRow, Pace, Trail } from '../types'
 import { makeColors } from './make-colors.js'
 import { BRAND, scene } from './scene'
 import type { Hex, Mode } from './scene'
@@ -170,6 +170,80 @@ const trail = atom({ plugin: 'rogue-road', key: 'trail' } as const, { phase: 0, 
 const pace = atom({ plugin: 'rogue-road', key: 'pace' } as const, 'espera' as Pace)
 const isBandHidden = atom({ plugin: 'rogue-road', key: 'isBandHidden' } as const, false)
 const isCampPending = atom({ plugin: 'rogue-road', key: 'isCampPending' } as const, false)
+const ledger = atom({ plugin: 'rogue-road', key: 'ledger' } as const, null as Ledger | null)
+const isDetailed = atom({ plugin: 'rogue-road', key: 'isDetailed' } as const, true)
+
+// ─── El libro de ruta: lo que la banda cuenta además del camino ──────
+
+/** Tokens legibles: 812, 4.5k, 154.6k, 1M. */
+const tokensOf = (n: number): string => {
+  if (n >= 1_000_000) {
+    return `${Math.round(n / 100_000) / 10}M`.replace('.0M', 'M')
+  }
+  if (n >= 1000) {
+    return `${Math.round(n / 100) / 10}k`.replace('.0k', 'k')
+  }
+
+  return String(Math.round(n))
+}
+
+const LIMIT_NAMES: Record<string, string> = { five_hour: '5 h', seven_day: '7 días', spend_limit: 'gasto' }
+
+/** Hora local corta de un instante ISO, para el reinicio de un límite. */
+const resetOf = (iso: string | null): string => {
+  if (iso === null) {
+    return ''
+  }
+  const d = new Date(iso)
+
+  return Number.isNaN(d.getTime()) ? '' : ` (reinicia ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')})`
+}
+
+/**
+ * Lee el contexto con el desglose de /context, estimado localmente (`summary`:
+ * no envía pedidos), más los límites de uso y el costo.
+ */
+async function refreshLedger($: EngineInterface): Promise<void> {
+  const usage = await $.session.usage({ breakdown: 'summary' }).catch(() => $.session.usage())
+  const b = usage.context.breakdown
+  const rows: LedgerRow[] = (b?.categories ?? [])
+    .filter(c => c.kind !== 'deferred' && c.tokens > 0)
+    .map(c => ({ name: c.name, tokens: c.tokens, color: c.color, kind: c.kind }))
+  const next: Ledger = {
+    tokens: usage.context.tokens ?? null,
+    window: usage.context.window,
+    rows,
+    max: b?.rawMaxTokens ?? usage.context.window,
+    threshold: b?.autoCompactThreshold ?? null,
+    model: b?.model ?? null,
+    limits: usage.rateLimits.map(r => ({ kind: r.kind, percentUsed: r.percentUsed, resetsAt: r.resetsAt ?? null })),
+    usd: usage.cost?.usd ?? null,
+  }
+  await update($, ledger, () => next)
+}
+
+/**
+ * La barra del desglose, de `width` celdas: cada categoría en su color, el
+ * colchón de autocompactación en ▒ y el espacio libre en ░. Reparte las celdas
+ * por el método del mayor resto, así siempre suman `width`.
+ */
+const barOf = (rows: LedgerRow[], max: number, width: number): { row: LedgerRow; cells: number }[] => {
+  const order = [...rows.filter(r => r.kind === 'used'), ...rows.filter(r => r.kind === 'buffer'), ...rows.filter(r => r.kind === 'free')]
+  const total = Math.max(max, order.reduce((sum, r) => sum + r.tokens, 0))
+  const exact = order.map(r => (r.tokens / total) * width)
+  const cells = exact.map(Math.floor)
+  let left = width - cells.reduce((a, c) => a + c, 0)
+  const byRest = exact.map((x, i) => [x - Math.floor(x), i] as const).sort((a, b) => b[0] - a[0])
+  for (const [, i] of byRest) {
+    if (left <= 0) {
+      break
+    }
+    cells[i] = (cells[i] ?? 0) + 1
+    left--
+  }
+
+  return order.map((row, i) => ({ row, cells: cells[i] ?? 0 })).filter(x => x.cells > 0)
+}
 
 async function setPace($: EngineInterface, next: Pace): Promise<void> {
   if ((await read($, pace)) === next) {
@@ -196,6 +270,7 @@ export const register: Register = (on, options) => {
     const phase = phaseOf(percent)
     await update($, trail, () => ({ phase, percent }))
     await update($, pace, () => 'espera' as Pace)
+    await refreshLedger($).catch(() => undefined)
     await applyPhase($, phase, mode)
     $.ui.status(statusOf({ phase, percent }, 'espera'))
 
@@ -204,6 +279,8 @@ export const register: Register = (on, options) => {
 
   // El contexto mueve el sol y al explorador.
   on('session.measure', async ($, e, next) => {
+    // El libro de ruta sigue al contexto, a los límites y al costo.
+    await refreshLedger($).catch(() => undefined)
     if (e.changed.includes('context')) {
       const percent = e.context.percent ?? null
       const phase = phaseOf(percent)
@@ -331,35 +408,87 @@ export const register: Register = (on, options) => {
     }
     const { phase, percent } = await read($, trail)
     const now = await read($, pace)
+    const book = await read($, ledger)
+    const detailed = await read($, isDetailed)
     const ph = phaseAt(phase)
     const road = miniRoad(percent, now)
+    const width = Math.max(20, Math.min(160, (e.props.bodyColumns ?? 80) - 2))
     const { Box, Button, Text } = $.ui.resolve(e)
+    const used = book?.rows.filter(r => r.kind === 'used') ?? []
+    const buffer = book?.rows.find(r => r.kind === 'buffer')
+    const free = book?.rows.find(r => r.kind === 'free')
+    const fill = book?.tokens === null || book === null ? '' : ` · ${tokensOf(book.tokens)}/${tokensOf(book.window)}`
+    const extras = [
+      book?.model ?? null,
+      ...(book?.limits ?? []).map(l => `límite ${LIMIT_NAMES[l.kind] ?? l.kind} ${l.percentUsed} %${resetOf(l.resetsAt)}`),
+      book?.threshold === null || book?.threshold === undefined ? null : `autocompacta a ${tokensOf(book.threshold)}`,
+      book?.usd === null || book?.usd === undefined ? null : `≈ US$ ${book.usd.toFixed(2)} (estimado)`,
+    ].filter((x): x is string => x !== null)
 
     return (
-      <Box flexDirection="row" gap={1}>
-        <Text color={ph.accent}>
-          {ph.icon} {ph.name}
-        </Text>
-        <Text>
-          <Text color={BRAND.orange}>{road.done}</Text>
-          <Text bold>{road.rogue}</Text>
-          <Text dimColor>{road.ahead}</Text>
-          <Text dimColor> ▲</Text>
-        </Text>
-        <Text dimColor>
-          {percent === null ? '—' : `${percent} %`} · {now === 'explora' ? 'explorando' : 'esperándote'}
-        </Text>
-        {(percent ?? 0) >= CAMP_FROM && (
-          <Button
-            key="acampar"
-            label="⛺ Acampar"
-            onPress={() => {
-              camp($)
-              $.ui.toast(CAMP_TEXT)
-            }}
-          />
+      <Box flexDirection="column">
+        <Box flexDirection="row" gap={1}>
+          <Text color={ph.accent}>
+            {ph.icon} {ph.name}
+          </Text>
+          <Text>
+            <Text color={BRAND.orange}>{road.done}</Text>
+            <Text bold>{road.rogue}</Text>
+            <Text dimColor>{road.ahead}</Text>
+            <Text dimColor> ▲</Text>
+          </Text>
+          <Text dimColor>
+            {percent === null ? '—' : `${percent} %`}
+            {fill} · {now === 'explora' ? 'explorando' : 'esperándote'}
+          </Text>
+          {(percent ?? 0) >= CAMP_FROM && (
+            <Button
+              key="acampar"
+              label="⛺ Acampar"
+              onPress={() => {
+                camp($)
+                $.ui.toast(CAMP_TEXT)
+              }}
+            />
+          )}
+          <Button key="detalle" label={detailed ? 'Menos' : 'Detalle'} onPress={() => update($, isDetailed, d => !d)} />
+          <Button key="ocultar" label="Ocultar" onPress={() => update($, isBandHidden, () => true)} />
+        </Box>
+        {detailed && book !== null && book.rows.length > 0 && (
+          <Text>
+            {barOf(book.rows, book.max, width).map(({ row, cells }) =>
+              row.kind === 'free' ? (
+                <Text key={row.name} dimColor>
+                  {'░'.repeat(cells)}
+                </Text>
+              ) : row.kind === 'buffer' ? (
+                <Text key={row.name} dimColor>
+                  {'▒'.repeat(cells)}
+                </Text>
+              ) : (
+                <Text key={row.name} color={row.color}>
+                  {'█'.repeat(cells)}
+                </Text>
+              ),
+            )}
+          </Text>
         )}
-        <Button key="ocultar" label="Ocultar" onPress={() => update($, isBandHidden, () => true)} />
+        {detailed && used.length > 0 && (
+          <Text wrap="wrap">
+            {used.map(r => (
+              <Text key={r.name}>
+                <Text color={r.color}>■ </Text>
+                <Text dimColor>
+                  {r.name} {tokensOf(r.tokens)}
+                  {'   '}
+                </Text>
+              </Text>
+            ))}
+            {buffer !== undefined && <Text dimColor>▒ {buffer.name} {tokensOf(buffer.tokens)}   </Text>}
+            {free !== undefined && <Text dimColor>░ {free.name} {tokensOf(free.tokens)}</Text>}
+          </Text>
+        )}
+        {detailed && extras.length > 0 && <Text dimColor>{extras.join(' · ')}</Text>}
       </Box>
     )
   })

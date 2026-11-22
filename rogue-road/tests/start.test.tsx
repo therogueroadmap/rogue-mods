@@ -141,3 +141,44 @@ test('el explorador vive en la viñeta del costado y al anochecer arde la fogata
   expect(source.includes('opacity="1.00" display="none"')).toBe(false)
   await ui.unmount()
 })
+
+test('la banda muestra el desglose del contexto, los límites y el costo', async ($, on) => {
+  const cat = (name: string, tokens: number, color: string, kind: string) => ({ name, tokens, color, kind, isDeferred: kind === 'deferred' })
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', (_, e) => ({
+    value: {
+      startedAt: 0,
+      context: {
+        tokens: 154600, window: 1000000, percent: 15,
+        ...((e as { breakdown?: string }).breakdown === undefined ? {} : {
+          breakdown: {
+            categories: [
+              cat('System prompt', 4500, 'promptBorder', 'used'), cat('System tools', 21300, 'inactive', 'used'),
+              cat('Messages', 105500, 'permission', 'used'), cat('Autocompact buffer', 33000, 'inactive', 'buffer'),
+              cat('Free space', 812400, 'inactive', 'free'),
+            ],
+            totalTokens: 154600, maxTokens: 1000000, rawMaxTokens: 1000000, autocompactSource: 'model-default', percentage: 15,
+            gridRows: [], model: 'Opus 5.5', memoryFiles: [], mcpTools: [], agents: [], isAutoCompactEnabled: true, autoCompactThreshold: 967000,
+          },
+        }),
+      },
+      rateLimits: [{ kind: 'five_hour', percentUsed: 23 }],
+      cost: { usd: 3.2 },
+    } as never,
+  }))
+  on('theme.set', () => ({ value: { isDrawn: true, requestId: 't' } }))
+  on('ui.status', () => ({ value: undefined }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface, props: { hasSurvey: false, bodyColumns: 100 } } as never)
+    expect((await ui.find({ type: 'Text', text: /154\.6k\/1M/ })) !== undefined).toBe(true)
+    expect((await ui.find({ type: 'Text', text: /Messages 105\.5k/ })) !== undefined).toBe(true)
+    expect((await ui.find({ type: 'Text', text: /Free space 812\.4k/ })) !== undefined).toBe(true)
+    expect((await ui.find({ type: 'Text', text: /límite 5 h 23 %/ })) !== undefined).toBe(true)
+    expect((await ui.find({ type: 'Text', text: /US\$ 3\.20 \(estimado\)/ })) !== undefined).toBe(true)
+    expect((await ui.find({ type: 'Button', key: 'detalle' } as never)) !== undefined).toBe(true)
+    await ui.unmount()
+  }
+})
