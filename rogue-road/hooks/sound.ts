@@ -36,15 +36,6 @@ const wind = (gain: number, from = 500, to = 1100): Layer => ({
 /** Brisa grave de la tarde. */
 const breeze = (gain: number): Layer => ({ wave: 'brown', drone: true, gain, filter: { type: 'lowpass', hz: 300, to: 600 } })
 
-/** Un acorde grave y quieto debajo de todo. */
-const pad = (notes: string[], gain: number): Layer => ({
-  wave: 'sine',
-  notes,
-  drone: true,
-  gain,
-  filter: { type: 'lowpass', hz: 420 },
-})
-
 /** Grillos: un trino agudo con trémolo rápido. */
 const crickets = (rate: number, gain: number): Layer => ({
   wave: 'sine',
@@ -68,17 +59,18 @@ const drops = (rate: number, gain: number): Layer => ({ wave: 'crackle', scatter
 const thunder: Layer = { wave: 'brown', scatter: 0.04, attack: 0.4, release: 3.5, gain: 0.5, filter: { type: 'lowpass', hz: 160 } }
 
 /**
- * El ambiente de cada fase, de Alba a Anochecer. La app nunca sube el volumen
- * de una capa, así que van audibles pero por debajo de la mitad, y los acordes
- * no bajan de la tercera octava, para que se oigan en parlantes chicos.
+ * El ambiente de cada fase, de Alba a Anochecer: el viento de base y lo que
+ * vive en cada hora. Sin acordes sostenidos, que cansan a la larga. La app
+ * nunca sube el volumen de una capa, así que van audibles pero por debajo de
+ * la mitad.
  */
 const PHASE_LAYERS: Layer[][] = [
-  [pad(['D3', 'A3', 'F#4'], 0.16), birds(0.7, 0.32), wind(0.18)],
-  [pad(['G3', 'D4', 'B4'], 0.14), birds(0.5, 0.3), wind(0.22)],
-  [wind(0.3, 700, 1400), birds(0.25, 0.24), pad(['C4', 'G4'], 0.1)],
-  [wind(0.26), breeze(0.22), pad(['A3', 'E4', 'C#5'], 0.14)],
-  [pad(['F3', 'C4', 'A4'], 0.16), crickets(1.2, 0.2), wind(0.2, 400, 800)],
-  [pad(['D3', 'A3', 'F4'], 0.15), fire(0.34), crickets(1.4, 0.18)],
+  [wind(0.2), birds(0.7, 0.32)],
+  [wind(0.22), birds(0.5, 0.3)],
+  [wind(0.3, 700, 1400), birds(0.25, 0.24)],
+  [wind(0.26), breeze(0.22)],
+  [wind(0.22, 400, 800), crickets(1.2, 0.2)],
+  [wind(0.18, 300, 700), fire(0.34), crickets(1.4, 0.18)],
 ]
 
 const isBird = (layer: Layer): boolean => 'notes' in layer && layer.notes[0] === 'E6'

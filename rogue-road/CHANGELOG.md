@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-22
+
+### Changed
+- The ambient sound drops its held chord, which grew tiresome; the wind is the bed of every phase now, with birds, the evening breeze, crickets and the campfire on top.
+
 ## [0.8.0] - 2026-11-22
 
 ### Changed
