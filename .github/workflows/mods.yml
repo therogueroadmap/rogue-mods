@@ -11,8 +11,13 @@ jobs:
       mods: ${{ steps.mods.outputs.mods }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Shared helpers are in sync
         run: bash scripts/sync-shared.sh --check
+      - name: Design system is generated from its tokens
+        run: node --experimental-strip-types design-system/scripts/build.mts --check
       - name: List the mods in the catalog
         id: mods
         run: |
