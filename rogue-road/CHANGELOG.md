@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-22
+
+### Changed
+- The command that repaints the theme and shows where the session is on the road is now `/rogue-road-mod` (it was `/rogue-road`).
+
 ## [0.6.0] - 2026-11-22
 
 ### Added

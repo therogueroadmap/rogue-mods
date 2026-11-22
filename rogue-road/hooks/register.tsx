@@ -446,7 +446,7 @@ export const register: Register = (on, options) => {
       $.ui.log(unpainted)
     }
 
-    await $.command.register({ name: 'rogue-road', description: 'Muestra en qué punto del camino (y del día) va la sesión' })
+    await $.command.register({ name: 'rogue-road-mod', description: 'Repinta el tema y muestra en qué punto del camino (y del día) va la sesión' })
     await $.command.register({ name: 'acampar', description: 'Acampa: compacta la conversación y vuelve a amanecer' })
     await $.command.register({ name: 'bitacora', description: 'Abre la bitácora del viaje: hitos, fases, clima y compañeros' })
     await $.command.register({ name: 'sonido', description: 'Habilita o deshabilita el sonido ambiental del camino (on | off)' })
@@ -765,7 +765,7 @@ export const register: Register = (on, options) => {
     )
   })
 
-  on('command.run', { command: 'rogue-road' }, async $ => {
+  on('command.run', { command: 'rogue-road-mod' }, async $ => {
     const { context } = await $.session.usage()
     const percent = context.percent ?? null
     const phase = phaseOf(percent)
