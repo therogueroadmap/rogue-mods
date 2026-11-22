@@ -2,12 +2,31 @@
 // en inglés en los tres idiomas; lo demás (banda, bitácora, avisos, fondo,
 // respuestas y los pedidos al modelo) sigue el ajuste «Idioma».
 
-import type { EntryKind, MarkKind, Weather } from '../types'
+import type { EntryKind, Language, MarkKind, Weather } from '../types'
 
-export type Lang = 'es' | 'en' | 'fr'
+export type Lang = Language
 
 /** El idioma elegido en los ajustes del mod; español si no hay otro. */
 export const langOf = (value: unknown): Lang => (value === 'english' ? 'en' : value === 'français' ? 'fr' : 'es')
+
+/** El idioma que pide `/language`: es, en o fr, o su nombre; null si no se reconoce. */
+export const langFromArg = (arg: string): Lang | null => {
+  const a = arg.trim().toLowerCase()
+  if (['es', 'español', 'espanol', 'spanish', 'espagnol'].includes(a)) {
+    return 'es'
+  }
+  if (['en', 'english', 'inglés', 'ingles', 'anglais'].includes(a)) {
+    return 'en'
+  }
+  if (['fr', 'français', 'francais', 'french', 'francés', 'frances'].includes(a)) {
+    return 'fr'
+  }
+
+  return null
+}
+
+/** El nombre de cada idioma en su propio idioma. */
+export const LANG_NAMES: Record<Lang, string> = { es: 'español', en: 'English', fr: 'français' }
 
 export type Texts = {
   phases: { name: string; tip: string }[]
@@ -76,6 +95,7 @@ export type Texts = {
     trailLogHint: string
     passTheMap: string
     passTheMapHint: string
+    language: string
   }
   reply: {
     soundOn: string
@@ -88,6 +108,9 @@ export type Texts = {
     unmeasured: string
     surfaces: (list: string, draw: string, sound: string) => string
     none: string
+    language: (name: string) => string
+    languageNow: (name: string) => string
+    languageUnknown: (arg: string) => string
   }
   draw: { painted: string; notPainted: (reason: string) => string; unpainted: string; noReason: string }
   soundNote: { ready: string; off: string; refused: string }
@@ -181,6 +204,7 @@ const es: Texts = {
     trailLogHint: '[foco]',
     passTheMap: 'Pasa el mapa: un handoff para continuar en una sesión nueva (skill handoff)',
     passTheMapHint: '[propósito de la próxima sesión]',
+    language: 'Cambia el idioma del mod (es | en | fr); el resto de Claude no cambia',
   },
   reply: {
     soundOn: '♪ Sonido habilitado: el camino suena según la fase y el clima. En la app de escritorio, activa también el parlante de la barra de título.',
@@ -193,6 +217,9 @@ const es: Texts = {
     unmeasured: 'sin medir aún',
     surfaces: (list, draw, sound) => `Superficies: ${list} · fondo ${draw} · ${sound}`,
     none: 'ninguna',
+    language: n => `Idioma del mod: ${n}. Solo cambian la banda, la bitácora, los avisos, el fondo y los pedidos del mod; el resto de Claude sigue igual.`,
+    languageNow: n => `Idioma del mod: ${n}. Cámbialo con /language es, /language en o /language fr.`,
+    languageUnknown: a => `No conozco el idioma «${a}». Usa /language es, /language en o /language fr.`,
   },
   draw: { painted: 'pintado', notPainted: r => `no pintado: ${r}`, unpainted: 'sin pintar aún', noReason: 'sin motivo' },
   soundNote: { ready: 'sonido listo (actívalo con el parlante de la barra de título)', off: 'sonido apagado', refused: 'la app no aceptó el sonido' },
@@ -314,6 +341,7 @@ const en: Texts = {
     trailLogHint: '[focus]',
     passTheMap: 'Passes the map: a handoff to continue in a new session (handoff skill)',
     passTheMapHint: '[purpose of the next session]',
+    language: 'Changes the mod’s language (es | en | fr); the rest of Claude stays as it is',
   },
   reply: {
     soundOn: '♪ Sound on: the road sounds with the phase and the weather. In the desktop app, also turn on the speaker in the title bar.',
@@ -326,6 +354,9 @@ const en: Texts = {
     unmeasured: 'not measured yet',
     surfaces: (list, draw, sound) => `Surfaces: ${list} · backdrop ${draw} · ${sound}`,
     none: 'none',
+    language: n => `Mod language: ${n}. Only the mod’s row, logbook, toasts, backdrop and requests change; the rest of Claude stays as it is.`,
+    languageNow: n => `Mod language: ${n}. Change it with /language es, /language en or /language fr.`,
+    languageUnknown: a => `Unknown language “${a}”. Use /language es, /language en or /language fr.`,
   },
   draw: { painted: 'painted', notPainted: r => `not painted: ${r}`, unpainted: 'not painted yet', noReason: 'no reason given' },
   soundNote: { ready: 'sound ready (turn on the speaker in the title bar)', off: 'sound off', refused: 'the app did not accept the sound' },
@@ -447,6 +478,7 @@ const fr: Texts = {
     trailLogHint: '[axe]',
     passTheMap: 'Passe la carte : un handoff pour continuer dans une nouvelle session (skill handoff)',
     passTheMapHint: '[objectif de la prochaine session]',
+    language: 'Change la langue du mod (es | en | fr) ; le reste de Claude ne change pas',
   },
   reply: {
     soundOn: '♪ Son activé : le chemin sonne selon la phase et la météo. Dans l’app de bureau, activez aussi le haut-parleur de la barre de titre.',
@@ -459,6 +491,9 @@ const fr: Texts = {
     unmeasured: 'pas encore mesuré',
     surfaces: (list, draw, sound) => `Surfaces : ${list} · fond ${draw} · ${sound}`,
     none: 'aucune',
+    language: n => `Langue du mod : ${n}. Seuls la barre, le carnet, les notifications, le fond et les demandes du mod changent ; le reste de Claude reste tel quel.`,
+    languageNow: n => `Langue du mod : ${n}. Changez-la avec /language es, /language en ou /language fr.`,
+    languageUnknown: a => `Langue inconnue « ${a} ». Utilisez /language es, /language en ou /language fr.`,
   },
   draw: { painted: 'peint', notPainted: r => `non peint : ${r}`, unpainted: 'pas encore peint', noReason: 'sans raison' },
   soundNote: { ready: 'son prêt (activez le haut-parleur de la barre de titre)', off: 'son coupé', refused: 'l’app n’a pas accepté le son' },

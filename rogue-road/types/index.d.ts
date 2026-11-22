@@ -29,6 +29,9 @@ export type Ledger = {
   usd: number | null
 }
 
+/** El idioma del mod: banda, bitácora, avisos, fondo y pedidos a Claude. */
+export type Language = 'es' | 'en' | 'fr'
+
 /** Un hito real del viaje: un commit, tests que pasan, un push o un PR. */
 export type MarkKind = 'commit' | 'tests' | 'pr' | 'push'
 
@@ -59,6 +62,7 @@ declare module 'claude-code' {
       recent: boolean[]
       companions: Companion[]
       isSoundOn: boolean
+      language: Language
     }
   }
 }

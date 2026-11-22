@@ -6,8 +6,8 @@ import { makeColors } from './make-colors.js'
 import { BRAND, MARK_COLORS, MAX_MARKS, scene, zoneAt } from './scene'
 import type { Hex, Mode } from './scene'
 import { soundOf } from './sound'
-import { TEXT, langOf } from './i18n'
-import type { Texts } from './i18n'
+import { LANG_NAMES, TEXT, langFromArg, langOf } from './i18n'
+import type { Lang, Texts } from './i18n'
 
 // ─── Las seis fases del día ──────────────────────────────────────────
 // La exploración empieza al alba con el contexto vacío; cada respuesta
@@ -289,6 +289,7 @@ const weather = atom({ plugin: 'rogue-road', key: 'weather' } as const, 'despeja
 const recent = atom({ plugin: 'rogue-road', key: 'recent' } as const, [] as boolean[])
 const companions = atom({ plugin: 'rogue-road', key: 'companions' } as const, [] as Companion[])
 const isSoundOn = atom({ plugin: 'rogue-road', key: 'isSoundOn' } as const, true)
+const language = atom({ plugin: 'rogue-road', key: 'language' } as const, 'es' as Lang)
 
 // ─── La bitácora: hitos, fases, clima y compañeros ───────────────────
 
@@ -392,6 +393,38 @@ async function recordTool($: EngineInterface, mode: Mode, isOk: boolean, mark: {
 // ─── El sonido: se habilita o deshabilita con /sound o desde la banda ─
 
 const SOUND_KEY = 'sonido'
+
+// ─── El idioma del mod: el ajuste «Idioma», o lo último elegido con /language ─
+
+const LANGUAGE_KEY = 'idioma'
+
+/** Registra los comandos con sus descripciones en el idioma del mod; los nombres quedan en inglés. */
+async function registerCommands($: EngineInterface): Promise<void> {
+  await $.command.register({ name: 'rogue-road-mod', description: t.cmd.rogueRoadMod })
+  await $.command.register({ name: 'make-camp', description: t.cmd.makeCamp })
+  await $.command.register({ name: 'logbook', description: t.cmd.logbook })
+  await $.command.register({ name: 'sound', description: t.cmd.sound, argumentHint: '[on | off]' })
+  await $.command.register({ name: 'language', description: t.cmd.language, argumentHint: '[es | en | fr]' })
+  await $.command.register({ name: 'clear-trail', description: t.cmd.clearTrail })
+  await $.command.register({ name: 'trail-log', description: t.cmd.trailLog, argumentHint: t.cmd.trailLogHint })
+  await $.command.register({ name: 'pass-the-map', description: t.cmd.passTheMap, argumentHint: t.cmd.passTheMapHint })
+}
+
+/**
+ * Cambia el idioma del mod y nada más: la banda, la bitácora, la insignia y
+ * los avisos se redibujan (leen `language`), los comandos cambian de
+ * descripción y la línea de estado se reescribe. La interfaz de Claude no se toca.
+ */
+async function setLanguage($: EngineInterface, config: Lang, next: Lang): Promise<void> {
+  t = TEXT[next]
+  await update($, language, () => next)
+  await $.store.set(LANGUAGE_KEY, { lang: next, config })
+  await registerCommands($)
+  $.ui.status(statusOf(await read($, trail), await read($, pace)))
+  if ((await $.ui.panes()).some(pane => pane.id === PANE)) {
+    await $.ui.open({ id: PANE, title: t.pane.title })
+  }
+}
 
 async function setSound($: EngineInterface, mode: Mode, config: string, on: boolean): Promise<void> {
   await update($, isSoundOn, () => on)
@@ -518,7 +551,8 @@ async function setPace($: EngineInterface, next: Pace): Promise<void> {
 
 export const register: Register = (on, options) => {
   const mode = modeOf(options.modo)
-  t = TEXT[langOf(options.idioma)]
+  const langConfig = langOf(options.idioma)
+  t = TEXT[langConfig]
   const soundConfig = options.sonido === 'desactivado' ? 'desactivado' : 'activado'
 
   on('session.start', async ($, e, next) => {
@@ -527,13 +561,12 @@ export const register: Register = (on, options) => {
       $.ui.log(unpainted)
     }
 
-    await $.command.register({ name: 'rogue-road-mod', description: t.cmd.rogueRoadMod })
-    await $.command.register({ name: 'make-camp', description: t.cmd.makeCamp })
-    await $.command.register({ name: 'logbook', description: t.cmd.logbook })
-    await $.command.register({ name: 'sound', description: t.cmd.sound, argumentHint: '[on | off]' })
-    await $.command.register({ name: 'clear-trail', description: t.cmd.clearTrail })
-    await $.command.register({ name: 'trail-log', description: t.cmd.trailLog, argumentHint: t.cmd.trailLogHint })
-    await $.command.register({ name: 'pass-the-map', description: t.cmd.passTheMap, argumentHint: t.cmd.passTheMapHint })
+    // El idioma: lo último elegido con /language, salvo que el ajuste del mod haya cambiado desde entonces.
+    const storedLang = (await $.store.get(LANGUAGE_KEY).catch(() => undefined)) as { lang?: unknown; config?: unknown } | undefined
+    const lang = storedLang?.config === langConfig && (storedLang.lang === 'es' || storedLang.lang === 'en' || storedLang.lang === 'fr') ? storedLang.lang : langConfig
+    t = TEXT[lang]
+    await update($, language, () => lang)
+    await registerCommands($)
 
     // El sonido: lo último elegido con /sound, salvo que la opción del mod haya cambiado desde entonces.
     const stored = (await $.store.get(SOUND_KEY).catch(() => undefined)) as { on?: unknown; config?: unknown } | undefined
@@ -707,6 +740,7 @@ export const register: Register = (on, options) => {
       return next(e)
     }
     const { Svg } = $.ui.resolve(e)
+    t = TEXT[await read($, language)]
     const { percent, phase } = await read($, trail)
     const now = await read($, pace)
     const ph = phaseAt(phase)
@@ -758,6 +792,7 @@ export const register: Register = (on, options) => {
     if (e.props.hasSurvey || (await read($, isBandHidden))) {
       return next(e)
     }
+    t = TEXT[await read($, language)]
     const { phase, percent } = await read($, trail)
     const now = await read($, pace)
     const book = await read($, ledger)
@@ -941,6 +976,20 @@ export const register: Register = (on, options) => {
     return { text: t.reply.handoff }
   })
 
+  on('command.run', { command: 'language' }, async ($, e) => {
+    const arg = e.args.trim()
+    if (arg === '') {
+      return { text: t.reply.languageNow(LANG_NAMES[await read($, language)]) }
+    }
+    const next = langFromArg(arg)
+    if (next === null) {
+      return { text: t.reply.languageUnknown(arg) }
+    }
+    await setLanguage($, langConfig, next)
+
+    return { text: t.reply.language(LANG_NAMES[next]) }
+  })
+
   on('command.run', { command: 'sound' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
     const want = /^(on|si|sí|activar|activado|1)$/.test(arg) ? true : /^(off|no|desactivar|desactivado|0)$/.test(arg) ? false : !(await read($, isSoundOn))
@@ -961,6 +1010,7 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Button, Text } = $.ui.resolve(e)
+    t = TEXT[await read($, language)]
     const { phase, percent } = await read($, trail)
     const list = await read($, journal)
     const w = await read($, weather)

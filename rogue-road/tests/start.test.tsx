@@ -424,3 +424,28 @@ test('en francés, la bitácora y el pedido de resumen hablan francés', { optio
   expect((await pane.find({ type: 'Text', text: /Jour 1 · ☀ Matin/ })) !== undefined).toBe(true)
   await pane.unmount()
 })
+
+test('/language cambia solo el idioma del mod, sin tocar el tema de la app', async ($, on) => {
+  const sets: unknown[] = []
+  base(on, 30, sets)
+  on('ui.open', () => ({ value: { isPlaced: true, requestId: 'p' } }))
+  on('ui.panes', () => ({ value: [] }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const before = sets.length
+
+  expect((await $.command.run(run('language'))).text?.includes('español')).toBe(true)
+  expect((await $.command.run(run('language', 'klingon'))).text?.includes('klingon')).toBe(true)
+  const answer = await $.command.run(run('language', 'en'))
+  expect(answer.text?.startsWith('Mod language: English')).toBe(true)
+  expect(sets.length).toBe(before)
+
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'desktop', props: { hasSurvey: false, bodyColumns: 100 } } as never)
+  expect((await band.find({ type: 'Text', text: /Morning/ })) !== undefined).toBe(true)
+  await band.unmount()
+  expect((await backdrop($)).includes('waiting for you')).toBe(true)
+
+  // Lo elegido se recuerda en la sesión siguiente.
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  expect((await $.command.run(run('language'))).text?.startsWith('Mod language: English')).toBe(true)
+  expect((await $.command.run(run('language', 'fr'))).text?.startsWith('Langue du mod : français')).toBe(true)
+})

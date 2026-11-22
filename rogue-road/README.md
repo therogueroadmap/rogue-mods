@@ -38,7 +38,7 @@ What it adds:
 
 - **Three languages.** Spanish, English or French for the row, the logbook, the toasts, the badge and the requests to Claude; the commands stay in English.
 
-Version 0.9.1.
+Version 0.10.0.
 
 ### Install
 
@@ -51,7 +51,7 @@ Version 0.9.1.
 
 In the plugin's config menu:
 
-- `Idioma · Language · Langue`: `español` (default), `english` or `français`.
+- `Idioma · Language · Langue`: `español` (default), `english` or `français`. `/language es|en|fr` changes it from the prompt and remembers the choice until this setting changes. It only affects the mod: the rest of Claude keeps its own language.
 - `Modo de color`: `auto` (follows the app), `claro` (light) or `oscuro` (dark).
 - `Sonido ambiental`: `activado` (default) or `desactivado`. `/sound` and the row's `♪` button change it for the session and remember the choice until this setting changes.
 
@@ -103,7 +103,7 @@ Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y n
 
 Para cerrar el día: `/clear-trail` limpia el contexto y empieza de cero, `/trail-log [foco]` le pide a Claude el resumen de la sesión y `/pass-the-map [propósito]` le pide un handoff para continuar en una sesión nueva (con la skill `handoff` si está instalada). Los dos últimos adjuntan la bitácora del día.
 
-El ajuste **Idioma** elige español, inglés o francés para la banda, la bitácora, los avisos, la insignia y los pedidos a Claude; los comandos quedan en inglés.
+El ajuste **Idioma**, o `/language es|en|fr` desde el prompt, elige español, inglés o francés para la banda, la bitácora, los avisos, la insignia y los pedidos a Claude; los comandos quedan en inglés. Solo cambia el mod: el resto de Claude conserva su idioma.
 
 La instalación, los ajustes y los requisitos están en la sección en inglés.
 

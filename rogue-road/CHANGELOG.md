@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-22
+
+### Added
+- `/language es|en|fr` changes the mod's language from the prompt, with no argument it says which is in use, and the choice is remembered until the `Idioma` setting changes. It only touches the mod (its row, logbook, toasts, backdrop, command descriptions and requests); the theme and the rest of Claude's interface stay as they are.
+
 ## [0.9.1] - 2026-11-22
 
 ### Removed
