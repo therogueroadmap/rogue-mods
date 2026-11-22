@@ -38,7 +38,7 @@ What it adds:
 
 - **Three languages.** Spanish, English or French for the row, the logbook, the toasts, the badge and the requests to Claude; the commands stay in English.
 
-Version 0.10.5.
+Version 1.0.0.
 
 ### Install
 
@@ -82,7 +82,7 @@ The terminal draws no backdrop or colors, so the mod there is the row above the 
 
 ### Status
 
-In progress.
+Stable (1.0.0).
 
 ## Español
 

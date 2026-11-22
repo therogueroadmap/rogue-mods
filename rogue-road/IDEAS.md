@@ -1,6 +1,6 @@
 # Rogue Road · Ideas para próximas versiones
 
-Ideas propuestas para seguir desarrollando el mod `rogue-road` después de la 0.5.0. La 0.6.0 implementó la 1, 2, 3, 5, 6 y 8; quedan pendientes la 4 y la 7. El orden va de mayor a menor impacto estimado. Todas son posibles con la API de mods actual.
+Ideas propuestas para seguir desarrollando el mod `rogue-road` después de la 0.5.0. La 0.6.0 implementó la 1, 2, 3, 5, 6 y 8; quedan pendientes la 4 y la 7. El mod se declaró estable en la 1.0.0; estas dos quedan para una versión futura. El orden va de mayor a menor impacto estimado. Todas son posibles con la API de mods actual.
 
 **Recomendación para empezar:** la **1 + 4** (hitos y días de viaje), porque le dan sentido al camino más allá del porcentaje. La **7** es la más útil en el día a día.
 

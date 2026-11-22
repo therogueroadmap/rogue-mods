@@ -21,7 +21,7 @@
     },
     {
       "name": "rogue-road",
-      "description": "Theme: a hooded explorer walks the roadmap from dawn to dusk as the context window fills up, and stops to wait whenever Claude needs your input. Camp compacts and brings a new dawn. Dark and light modes.",
+      "description": "Theme: a hooded explorer walks the roadmap from dawn to dusk as the context window fills up, and stops to wait whenever Claude needs your input. Milestones, weather, companions, a logbook, ambient sound and a context ledger above the prompt; /make-camp compacts and brings a new dawn. Dark and light modes; Spanish, English or French.",
       "source": "./rogue-road",
       "category": "personalization"
     }

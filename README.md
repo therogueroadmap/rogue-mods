@@ -21,7 +21,7 @@ In the desktop app: + next to the prompt box → Plugins → Add marketplace (`t
 |---|---|---|
 | [`rasenshuriken`](rasenshuriken/) | Theme | In progress |
 | [`sharingan`](sharingan/) | Theme | In progress |
-| [`rogue-road`](rogue-road/) | Theme | In progress |
+| [`rogue-road`](rogue-road/) | Theme | Stable |
 
 Use one **theme** at a time: the last theme set wins. Other mods (panels, rows, commands) combine freely.
 
