@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { stripTypeScriptTypes } from 'node:module'
 
-import { BRAND, rogueGlyph, scene } from '../../rogue-road/hooks/scene.ts'
+import { BRAND, ROGUE_STYLE, rogueGlyph, scene } from '../../rogue-road/hooks/scene.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const isCheck = process.argv.includes('--check')
@@ -158,23 +158,19 @@ emit(
 )
 
 const explorer = (pace: 'explora' | 'espera', x: number): string =>
-  `<g class="${pace}" transform="translate(${x} 104) scale(1.3)">${rogueGlyph}</g>`
+  `<g class="${pace}" transform="translate(${x} 150) scale(1.1)">${rogueGlyph}</g>`
 emit(
   'assets/rogue-explorer.svg',
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 130" width="480" height="260">
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 176" width="520" height="352">
 <style>
-.ink, .cape { fill: ${BRAND.navy} } .face { fill: ${BRAND.cream} } .scarf, .lamp { fill: ${BRAND.orange} }
-.pole { stroke: ${BRAND.navy}; stroke-width: 2.4; stroke-linecap: round } .pole.thin { stroke-width: 1.2 }
-.leg { stroke: ${BRAND.navy}; stroke-width: 4.2; stroke-linecap: round; fill: none }
-.lamp-glow, .dust circle, .bubble { opacity: 0 } .lamp-glow { fill: ${BRAND.orange} }
-.espera .bubble { opacity: 1 } .espera .lamp-glow { opacity: 0.4 }
-.bubble-box { fill: ${BRAND.cream}; stroke: ${BRAND.navy}; stroke-width: 1.6 } .dot { fill: ${BRAND.navy} }
-.explora .leg-a { transform: rotate(18deg) } .explora .leg-b { transform: rotate(-18deg) }
-.leg { transform-box: fill-box; transform-origin: 50% 0% }
+svg { --figure: ${BRAND.navy}; --staff: ${BRAND.navy}; --boot: #5A3A26; --bubble: ${BRAND.cream} }
+${ROGUE_STYLE}
+.explora .stride-a { transform: rotate(18deg) } .explora .stride-b { transform: rotate(-18deg) }
+.espera .lamp-glow { opacity: 0.4 }
 </style>
-<!-- left: exploring, right: waiting for the person -->
+<!-- left: walking while Claude works, right: waiting for the person -->
 ${explorer('explora', 70)}
-${explorer('espera', 170)}
+${explorer('espera', 190)}
 </svg>
 `,
 )

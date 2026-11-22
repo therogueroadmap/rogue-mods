@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-22
+
+### Changed
+- A new explorer, the traveller: the emblem's hooded figure with human proportions (a face under the pointed hood, arms and hands, a belted tunic, boots and a short cape) and a backpack with the rolled map and a hanging lantern. Walking, it swings its free arm and the staff moves with its hand; waiting, it plants the staff, holds the backpack strap and turns its face towards the conversation.
+- At night the explorer's clothes are a slate grey instead of pale cream, with a lighter staff so it stands out against the sky.
+
 ## [0.3.2] - 2026-11-22
 
 ### Changed

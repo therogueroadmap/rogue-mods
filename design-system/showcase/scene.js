@@ -211,26 +211,98 @@ export const sunAt = (percent        )                           => {
   return { x: 140 + 1320 * Math.min(t, 1.05), y: HORIZON - arc + (t > 1 ? (t - 1) * 600 : 0) }
 }
 
-// ─── El explorador ───────────────────────────────────────────────────
-// Silueta propia: capucha en pico, capa, bufanda naranja, bastón y farol.
-// Coordenadas locales con los pies en (0, 0); mira a la derecha.
+// ─── El explorador: el viajero ───────────────────────────────────────
+// La silueta del emblema con proporciones humanas: rostro bajo la capucha en
+// pico, brazos y manos, túnica con cinturón, botas, capa corta, y a la espalda
+// la mochila con el mapa enrollado y el farol. Pies en (0, 0), mira a la
+// derecha, unos 108 de alto. Dos poses: camina (explora) y espera.
 
-const ROGUE = `<g class="rogue-body">
-<path class="cape" d="M-9 -44 C-18 -34 -25 -20 -29 -7 L-12 -9 Z"/>
-<path class="ink" d="M-1 -66 C-11 -61 -14 -51 -12 -42 L12 -42 C12 -53 7 -61 -1 -66 Z"/>
-<ellipse class="face" cx="4.5" cy="-49" rx="4.2" ry="5.2"/>
-<path class="ink" d="M-12 -43 C-15 -30 -16 -18 -14 -8 L13 -9 C13 -20 13 -32 12 -43 Z"/>
-<path class="scarf" d="M-11 -44 L12 -44 L12 -39 L-11 -39 Z"/>
-<path class="scarf scarf-tail" d="M-10 -43 L-21 -38 L-19 -34 L-9 -39 Z"/>
-<g class="staff"><line class="pole" x1="16" y1="-58" x2="18" y2="1"/><circle class="ink" cx="16" cy="-59" r="2.4"/>
-<g class="lantern"><line class="pole thin" x1="16" y1="-57" x2="16" y2="-49"/><rect class="lamp" x="12.6" y="-49" width="6.8" height="8" rx="2"/><circle class="lamp-glow" cx="16" cy="-45" r="14"/></g></g>
-</g>
-<g class="legs"><path class="leg leg-a" d="M-4 -10 L-6 0"/><path class="leg leg-b" d="M5 -10 L7 0"/></g>
+const PACK = `<path class="strap" d="M-7 -78C-2 -70 2 -62 4 -52"/>
+<rect class="pack" x="-22" y="-76" width="13" height="28" rx="5"/><rect class="pack-flap" x="-22" y="-76" width="13" height="9" rx="4"/>
+<rect class="orange" x="-25" y="-83" width="18" height="7" rx="3.5"/><path class="route-mark" d="M-21 -79.5h12"/>
+<line class="pole thin" x1="-20" y1="-49" x2="-27" y2="-37"/>
+<circle class="lamp-glow" cx="-28" cy="-31" r="13"/><rect class="lamp" x="-31.5" y="-38" width="7" height="9" rx="2"/>`
+
+const HEAD = `<g transform="translate(0 -76) scale(.76) translate(0 76)">
+<path class="ink" d="M-8 -108C-20 -99 -22 -86 -16 -75L13 -75C16 -88 9 -99 -8 -108Z"/>
+<path class="skin" d="M3 -96C10 -95 12 -88 11 -81C9 -78 4 -77 0 -79C-1 -85 -1 -91 3 -96Z"/>
+<path class="ink" d="M2 -97C7 -97 11 -94 12 -89C8 -91 5 -92 1 -90Z"/>
+<circle class="eye" cx="7" cy="-87" r="1.2"/><path class="nose" d="M10.6 -86L12.2 -83.2L10.4 -82.6"/>
+</g>`
+
+const TORSO = `<path class="cape" d="M-10 -76C-20 -66 -27 -48 -30 -30L-14 -33Z"/>
+<path class="ink" d="M-11 -76C-13 -64 -13 -50 -12 -36L12 -36C13 -50 13 -64 11 -76Z"/>
+<path class="belt" d="M-12 -46H12V-42H-12Z"/><rect class="buckle" x="2" y="-46.5" width="4" height="5" rx="1"/>
+<path class="orange" d="M-12 -77H12V-71H-12Z"/>`
+
+const leg = (cls        , d        , boot        )         => `<g class="${cls}"><path class="limb" d="${d}"/><path class="boot" d="${boot}"/></g>`
+
+const ROGUE = `<g class="pose-walk">
+${leg('stride stride-b', 'M3 -46L4 -24L4 -4', 'M0 -5H8A3 3 0 0 1 11 -2V0H0Z')}
+<g class="walker"><g transform="translate(0 -8)">
+<g class="arm-back"><path class="limb" d="M-7 -72L-9 -58L-7 -48"/><circle class="skin" cx="-7" cy="-47" r="2.6"/></g>
+${PACK}
+${TORSO}
+<path class="tail orange" d="M-10 -76L-24 -69L-21 -65L-9 -71Z"/>
+${HEAD}
+<g class="arm-front"><line class="pole" x1="18" y1="-88" x2="20" y2="9"/><circle class="ink" cx="18" cy="-89" r="2.8"/>
+<path class="limb" d="M7 -72L12 -60L18 -56"/><circle class="skin" cx="18.6" cy="-56" r="3"/></g>
+</g></g>
+${leg('stride stride-a', 'M-3 -46L-4 -24L-4 -4', 'M-7 -5H1A3 3 0 0 1 4 -2V0H-7Z')}
 <g class="dust"><circle cx="-12" cy="-1" r="2.2"/><circle cx="-20" cy="-3" r="1.6"/><circle cx="-27" cy="-1" r="1.2"/></g>
-<g class="bubble" transform="translate(-2 -84)"><path class="bubble-box" d="M-18 -11 H18 A7 7 0 0 1 25 -4 V4 A7 7 0 0 1 18 11 H4 L-1 17 L-4 11 H-18 A7 7 0 0 1 -25 4 V-4 A7 7 0 0 1 -18 -11 Z"/>
+</g>
+<g class="pose-wait"><g class="tilt">
+${leg('still', 'M3 -46L5 -24L6 -4', 'M2 -5H10A3 3 0 0 1 13 -2V0H2Z')}
+${leg('still', 'M-3 -46L-5 -24L-6 -4', 'M-9 -5H-1A3 3 0 0 1 2 -2V0H-9Z')}
+<g transform="translate(0 -8)">
+${PACK}
+${TORSO}
+<path class="orange" d="M-11 -75L-15 -58L-11 -58L-8 -71Z"/>
+<path class="limb" d="M-7 -72L-6 -60L-1 -58"/><circle class="skin" cx="0" cy="-58" r="2.6"/>
+<g class="look">${HEAD}</g>
+<line class="pole" x1="21" y1="-96" x2="21" y2="9"/><circle class="ink" cx="21" cy="-97" r="2.8"/>
+<path class="limb" d="M7 -72L14 -66L20 -68"/><circle class="skin" cx="21" cy="-68" r="2.8"/>
+</g></g></g>
+<g class="bubble" transform="translate(4 -116)"><path class="bubble-box" d="M-18 -11 H18 A7 7 0 0 1 25 -4 V4 A7 7 0 0 1 18 11 H4 L-1 17 L-4 11 H-18 A7 7 0 0 1 -25 4 V-4 A7 7 0 0 1 -18 -11 Z"/>
 <circle class="dot d1" cx="-9" cy="0" r="2.6"/><circle class="dot d2" cx="0" cy="0" r="2.6"/><circle class="dot d3" cx="9" cy="0" r="2.6"/></g>`
 
-/** El explorador solo, para usarlo como avatar fuera de la escena. */
+/**
+ * Los estilos del viajero. Leen `--figure` (la ropa), `--staff` (el bastón),
+ * `--boot` y `--bubble`, y esperan la clase `explora` o `espera` en un
+ * ancestro. Sus animaciones están en ROGUE_KEYFRAMES.
+ */
+export const ROGUE_STYLE = `.ink { fill: var(--figure) } .cape { fill: var(--figure); opacity: 0.82 }
+.orange, .lamp, .buckle { fill: ${BRAND.orange} } .lamp-glow { fill: ${BRAND.orange}; opacity: 0 }
+.skin { fill: #E2A77E } .eye { fill: ${BRAND.navy} } .nose { fill: none; stroke: #B97B55; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round }
+.limb { fill: none; stroke: var(--figure); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round }
+.boot { fill: var(--boot) } .belt { fill: #7A4E32 } .strap { fill: none; stroke: #7A4E32; stroke-width: 2.4; stroke-linecap: round }
+.pack { fill: var(--figure); opacity: 0.78 } .pack-flap { fill: var(--figure) }
+.route-mark { fill: none; stroke: ${BRAND.navy}; stroke-width: 0.9; stroke-dasharray: 2 2 }
+.pole { fill: none; stroke: var(--staff); stroke-width: 2.6; stroke-linecap: round } .pole.thin { stroke-width: 1.3 }
+.dust circle { fill: var(--road, ${BRAND.cream}); opacity: 0 }
+.bubble { opacity: 0 } .bubble-box { fill: var(--bubble); stroke: var(--staff); stroke-width: 1.6 } .dot { fill: var(--staff) }
+.pose-wait { display: none } .espera .pose-wait { display: inline } .espera .pose-walk { display: none }
+.stride, .arm-back, .arm-front, .cape, .tail, .tilt, .look { transform-box: fill-box }
+.stride, .arm-back { transform-origin: 50% 0% } .cape, .tail { transform-origin: 100% 0% } .tilt, .look { transform-origin: 50% 100% } .arm-front { transform-origin: 0% 17% }
+.explora .walker { animation: rr-bob 0.8s ease-in-out infinite }
+.explora .stride-a, .explora .arm-back { animation: rr-step-a 0.8s ease-in-out infinite }
+.explora .stride-b { animation: rr-step-b 0.8s ease-in-out infinite }
+.explora .cape, .explora .tail { animation: rr-sway 1.6s ease-in-out infinite }
+.explora .arm-front { animation: rr-staff 0.8s ease-in-out infinite }
+.explora .dust circle { animation: rr-dust 0.8s ease-out infinite }
+.explora .dust circle:nth-child(2) { animation-delay: 0.2s } .explora .dust circle:nth-child(3) { animation-delay: 0.4s }
+.espera .bubble { opacity: 1 }
+.espera .dot { animation: rr-dot 2.4s ease-in-out infinite } .espera .d2 { animation-delay: 0.4s } .espera .d3 { animation-delay: 0.8s }
+.espera .lamp-glow { opacity: 0.5; animation: rr-breathe 4s ease-in-out infinite }
+.espera .tilt { animation: rr-idle 4s ease-in-out infinite }
+.espera .look { animation: rr-look 7s ease-in-out infinite }`
+
+export const ROGUE_KEYFRAMES = `@keyframes rr-bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.8px) } }
+@keyframes rr-sway { 0%, 100% { transform: rotate(0deg) } 50% { transform: rotate(-8deg) } }
+@keyframes rr-staff { 0%, 100% { transform: rotate(-5deg) } 50% { transform: rotate(6deg) } }
+@keyframes rr-look { 0%, 40%, 100% { transform: rotate(0deg) } 55%, 85% { transform: rotate(-5deg) } }`
+
+/** El viajero solo, para usarlo como avatar fuera de la escena. */
 export const rogueGlyph = ROGUE
 
 // ─── La escena completa ──────────────────────────────────────────────
@@ -295,10 +367,13 @@ const vignette = (pace      , shadowLen        , shadowDir        , shadowAlpha 
 <path class="vg-path" d="M-60 ${VG_GROUND + 6}H460"/>
 <g class="vg-scroll vg-near">${NEAR_THINGS}</g>
 <ellipse class="vg-shadow" cx="${r1(150 + (shadowDir * shadowLen) / 2)}" cy="${VG_GROUND + 2}" rx="${r1(shadowLen / 2 + 14)}" ry="6" opacity="${shadowAlpha.toFixed(2)}"/>
-<g transform="translate(150 ${VG_GROUND}) scale(2.1)"><g class="${pace}">${ROGUE}</g></g>
+<g transform="translate(150 ${VG_GROUND}) scale(1.35)"><g class="${pace}">${ROGUE}</g></g>
 <g opacity="${fireflies.toFixed(2)}">${[[60, 760], [250, 720], [320, 800], [110, 690], [380, 740]].map(([x, y], i) => `<circle class="firefly" cx="${x}" cy="${y}" r="2.6" style="animation-delay: -${i * 1.7}s"/>`).join('')}</g>
 </g>
 </svg>`
+
+const LIGHT_EXTRA = `--staff: ${BRAND.navy}; --boot: #5A3A26;`
+const DARK_EXTRA = '--staff: #A7B0C2; --boot: #8A5A3C;'
 
                           
                         
@@ -332,7 +407,7 @@ const badge = (p        , pace      , label        )         => {
   return `<svg x="20" y="20" width="236" height="84" viewBox="0 0 236 84" class="badge">
 <rect class="badge-box" x="0" y="0" width="236" height="84" rx="42"/>
 <circle cx="42" cy="42" r="30" fill="url(#rrSky)"/>
-<g clip-path="url(#rrBadgeClip)"><g class="${pace}" transform="translate(40 70) scale(0.64)">${ROGUE}</g></g>
+<g clip-path="url(#rrBadgeClip)"><g class="${pace}" transform="translate(40 106) scale(0.76)">${ROGUE}</g></g>
 <circle class="ring-track" cx="42" cy="42" r="33"/>
 <circle class="ring" cx="42" cy="42" r="33" pathLength="100" stroke-dasharray="${r1(clamp(p, 0, 100))} 100" transform="rotate(-90 42 42)"/>
 <text class="badge-title" x="88" y="38">${title}</text>
@@ -346,13 +421,13 @@ const compose = ({ percent, pace, mode, label = '' }            , lite         )
   const night = nightOf(day)
   const land = { ...day, near: mix(day.near, '#F4EAD6', 0.22) }
   const light = vars(land, BRAND.navy, mix(day.horizon, BRAND.cream, 0.4), '#F4EAD6', mix(day.near, BRAND.cream, 0.55), BRAND.orange, BRAND.cream)
-  const dark = vars(night, BRAND.cream, BRAND.navy, BRAND.navy, mix(night.near, BRAND.cream, 0.28), BRAND.orange, '#13284A')
+  const dark = vars(night, '#8F99AD', BRAND.navy, BRAND.navy, mix(night.near, BRAND.cream, 0.28), BRAND.orange, '#13284A')
   const palette =
     mode === 'oscuro'
-      ? `svg { ${dark} }`
+      ? `svg { ${dark} ${DARK_EXTRA} }`
       : mode === 'claro'
-        ? `svg { ${light} }`
-        : `svg { ${light} } @media (prefers-color-scheme: dark) { svg { ${dark} } }`
+        ? `svg { ${light} ${LIGHT_EXTRA} }`
+        : `svg { ${light} ${LIGHT_EXTRA} } @media (prefers-color-scheme: dark) { svg { ${dark} ${DARK_EXTRA} } }`
 
   const f = 0.03 + 0.94 * (Math.min(p, 100) / 100)
   const [rx, ry] = roadPoint(f)
@@ -387,14 +462,12 @@ const compose = ({ percent, pace, mode, label = '' }            , lite         )
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
 <style>
 ${palette}
-@keyframes rr-bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.6px) } }
 @keyframes rr-step-a { 0%, 100% { transform: rotate(22deg) } 50% { transform: rotate(-22deg) } }
 @keyframes rr-step-b { 0%, 100% { transform: rotate(-22deg) } 50% { transform: rotate(22deg) } }
-@keyframes rr-sway { 0%, 100% { transform: rotate(0deg) } 50% { transform: rotate(-7deg) } }
-@keyframes rr-staff { 0%, 100% { transform: rotate(-4deg) } 50% { transform: rotate(5deg) } }
 @keyframes rr-dust { 0% { opacity: 0.5; transform: translateX(0) } 100% { opacity: 0; transform: translateX(-10px) } }
 @keyframes rr-dot { 0%, 100% { opacity: 0.25 } 50% { opacity: 1 } }
 @keyframes rr-breathe { 0%, 100% { opacity: 0.35 } 50% { opacity: 0.8 } }
+${ROGUE_KEYFRAMES}
 @keyframes rr-drift { 0% { transform: translateX(0) } 100% { transform: translateX(60px) } }
 @keyframes rr-twinkle { 0%, 100% { opacity: 0.4 } 50% { opacity: 1 } }
 @keyframes rr-scroll { to { transform: translateX(-${VG_LOOP}px) } }
@@ -414,31 +487,12 @@ ${palette}
 .road-done { fill: none; stroke: var(--trail); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round }
 .cairn { fill: var(--road) } .cairn.passed { fill: var(--trail) }
 .tent { fill: var(--road) } .tent-door { fill: var(--near) } .flag { fill: var(--trail) }
-.ink { fill: var(--figure) } .cape { fill: var(--figure); opacity: 0.9 } .face { fill: var(--face) }
-.scarf { fill: ${BRAND.orange} }
-.pole { stroke: var(--figure); stroke-width: 2.4; stroke-linecap: round } .pole.thin { stroke-width: 1.2 }
-.leg { stroke: var(--figure); stroke-width: 4.2; stroke-linecap: round; fill: none }
-.lamp { fill: ${BRAND.orange} } .lamp-glow { fill: ${BRAND.orange}; opacity: 0 }
-.dust circle { fill: var(--road); opacity: 0 }
-.bubble { opacity: 0 } .bubble-box { fill: var(--bubble); stroke: var(--figure); stroke-width: 1.6 } .dot { fill: var(--figure) }
 .sun { fill: ${sunColor} } .sun-glow { stop-color: ${sunColor} }
 .star { fill: #FCF3E1 } .moon { fill: #FCF3E1 }
 .cloud { fill: #FCF3E1; opacity: 0.32 }
 .clouds { animation: rr-drift 90s linear infinite alternate }
 .star.tw { animation: rr-twinkle 6s ease-in-out infinite }
-.leg, .cape, .staff, .scarf-tail { transform-box: fill-box }
-.leg { transform-origin: 50% 0% } .cape { transform-origin: 100% 0% } .staff { transform-origin: 50% 100% } .scarf-tail { transform-origin: 100% 0% }
-.explora .rogue-body { animation: rr-bob 0.8s ease-in-out infinite }
-.explora .leg-a { animation: rr-step-a 0.8s ease-in-out infinite }
-.explora .leg-b { animation: rr-step-b 0.8s ease-in-out infinite }
-.explora .cape, .explora .scarf-tail { animation: rr-sway 1.6s ease-in-out infinite }
-.explora .staff { animation: rr-staff 0.8s ease-in-out infinite }
-.explora .dust circle { animation: rr-dust 0.8s ease-out infinite }
-.explora .dust circle:nth-child(2) { animation-delay: 0.2s } .explora .dust circle:nth-child(3) { animation-delay: 0.4s }
-.espera .bubble { opacity: 1 }
-.espera .dot { animation: rr-dot 2.4s ease-in-out infinite } .espera .d2 { animation-delay: 0.4s } .espera .d3 { animation-delay: 0.8s }
-.espera .lamp-glow { opacity: 0.5; animation: rr-breathe 4s ease-in-out infinite }
-.espera .rogue-body { animation: rr-idle 4s ease-in-out infinite }
+${ROGUE_STYLE}
 .rim { fill: none; stroke: ${sunColor}; stroke-width: 2; stroke-linejoin: round }
 .haze-band { stop-color: var(--horizon) }
 .marker-dot { fill: var(--trail); stroke: var(--bubble); stroke-width: 2 }

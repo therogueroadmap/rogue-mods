@@ -94,7 +94,7 @@
   </section>
 </div>
 <script type="module">
-  import { scene, skyAt, rogueGlyph, BRAND } from './scene.js'
+  import { scene, skyAt, rogueGlyph, BRAND, ROGUE_STYLE } from './scene.js'
   const PHASES = [['alba', 'Alba', 0], ['manana', 'Mañana', 15], ['mediodia', 'Mediodía', 35], ['tarde', 'Tarde', 55], ['atardecer', 'Atardecer', 75], ['anochecer', 'Anochecer', 90]]
   const $ = id => document.getElementById(id)
   let pace = 'explora'
@@ -121,7 +121,7 @@
     const to = PHASES[i + 1]?.[2] ?? 100
     return `<div class="phase" style="background:linear-gradient(${s.top},${s.mid} 60%,${s.horizon});color:${from >= 15 && from < 75 ? BRAND.navy : BRAND.cream}"><b>${name}</b><span>${from}–${to} %</span></div>`
   }).join('')
-  $('avatar').innerHTML = `<svg viewBox="-34 -92 70 96"><style>.ink,.cape{fill:${BRAND.navy}}.face{fill:${BRAND.cream}}.scarf,.lamp{fill:${BRAND.orange}}.pole{stroke:${BRAND.navy};stroke-width:2.4;stroke-linecap:round}.leg{stroke:${BRAND.navy};stroke-width:4.2;stroke-linecap:round}.lamp-glow,.dust,.bubble{display:none}</style>${rogueGlyph}</svg>`
+  $('avatar').innerHTML = `<svg viewBox="-34 -112 70 96"><style>svg{--figure:${BRAND.navy};--staff:${BRAND.navy};--boot:#5A3A26;--bubble:${BRAND.cream}}${ROGUE_STYLE}.bubble,.dust{display:none}</style><g class="espera">${rogueGlyph}</g></svg>`
   draw()
 </script>
 </body>

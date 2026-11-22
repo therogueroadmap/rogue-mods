@@ -4,7 +4,7 @@
 
 ## English
 
-A theme for Claude's interface built on The Rogue Roadmap brand. A hooded explorer — the rogue — walks a winding road. The road is the context window: the explorer sets out at **dawn** with an empty context, and every answer pushes the sun west until **dusk** marks a context that is nearly full. **Acampar** (camp) compacts the conversation, and a new day begins.
+A theme for Claude's interface built on The Rogue Roadmap brand. A hooded traveller — the rogue, with a backpack, a map and a lantern — walks a winding road. The road is the context window: the explorer sets out at **dawn** with an empty context, and every answer pushes the sun west until **dusk** marks a context that is nearly full. **Acampar** (camp) compacts the conversation, and a new day begins.
 
 The explorer lives in a vignette in the bottom-left corner, beside the conversation. While Claude works it walks in place and the world scrolls behind it. When Claude needs you — the turn ended, a permission prompt, a question, a plan to approve — everything stops: it lights its lantern and waits with a bubble over its head. On the landscape behind, an orange marker shows how far along the road it is.
 
@@ -28,7 +28,7 @@ What it adds:
 - A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road` with the details and `/acampar` to compact.
 
-Version 0.3.2.
+Version 0.4.0.
 
 ### Install
 
