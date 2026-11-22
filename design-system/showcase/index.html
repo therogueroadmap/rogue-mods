@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rogue Road Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../tokens/tokens.css">
+<link rel="stylesheet" href="../components/components.css">
+<style>
+  body { margin: 0; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-block: 0 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 56px; }
+  .stage { position: relative; height: min(62vh, 560px); border-radius: 0 0 var(--rr-radius-xl) var(--rr-radius-xl); overflow: hidden; }
+  .stage svg { display: block; }
+  .stage__title { position: absolute; left: max(16px, 5vw); top: 32px; color: var(--rr-color-cream-200); text-shadow: 0 2px 14px rgba(10, 27, 53, .45); }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; }
+  .controls input[type=range] { flex: 1 1 260px; accent-color: var(--rr-accent); }
+  section { display: grid; gap: 20px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .swatch { border-radius: var(--rr-radius-md); overflow: hidden; border: 1px solid var(--rr-border); background: var(--rr-bg-surface); }
+  .swatch i { display: block; height: 72px; }
+  .swatch p { margin: 0; padding: 10px 12px; font-size: 13px; line-height: 1.35; }
+  .swatch code { font-family: var(--rr-font-family-mono); font-size: 12px; color: var(--rr-text-muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .phases { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .phase { border-radius: var(--rr-radius-md); padding: 14px; min-height: 92px; display: grid; align-content: space-between; }
+  .phase b { font-family: var(--rr-font-family-display); font-size: 18px; }
+  .chat { display: grid; gap: 12px; padding: 20px; border-radius: var(--rr-radius-lg); background: var(--rr-bg-page); border: 1px solid var(--rr-border); }
+  .type-scale p { margin: 0; }
+</style>
+</head>
+<body class="rr">
+<div class="stage" id="stage" aria-label="Escena del camino"></div>
+<div class="wrap">
+  <div class="controls">
+    <label class="rr-field" style="flex:1 1 320px"><span>Contexto usado: <b id="pct">20 %</b> · <span id="phase-name">Mañana</span></span>
+      <input id="ctx" type="range" min="0" max="100" value="20"></label>
+    <button class="rr-btn rr-btn--secondary" id="pace" type="button">El explorador espera</button>
+    <button class="rr-btn rr-btn--ghost" id="theme" type="button">Cambiar a oscuro</button>
+  </div>
+
+  <section>
+    <p class="rr-eyebrow">Marca</p>
+    <h2 class="rr-h2 rr-rule">Tres colores, un camino</h2>
+    <div class="grid">
+      <div class="swatch"><i style="background:var(--rr-color-brand-navy)"></i><p>Navy · noche y tinta<br><code>#0A1B35</code></p></div>
+      <div class="swatch"><i style="background:var(--rr-color-brand-orange)"></i><p>Naranja · el sol<br><code>#F7792C</code></p></div>
+      <div class="swatch"><i style="background:var(--rr-color-brand-cream)"></i><p>Crema · capa y camino<br><code>#FCF3E1</code></p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="rr-eyebrow">Ciclo del día</p>
+    <h2 class="rr-h2">Seis fases del contexto</h2>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <section class="type-scale">
+    <p class="rr-eyebrow">Tipografía · Outfit</p>
+    <p class="rr-display">Explorar más allá del prototipo</p>
+    <p class="rr-h1">Encabezado 1 · 39</p>
+    <p class="rr-h2">Encabezado 2 · 31</p>
+    <p class="rr-h3">Encabezado 3 · 25</p>
+    <p class="rr-h4">Encabezado 4 · 20</p>
+    <p>Texto base de 16 px con interlineado 1,55: los agentes de IA en el desarrollo de software real, con el mapa abierto y el camino por delante.</p>
+    <p class="rr-muted" style="font-size:14px">Texto secundario de 14 px para notas y metadatos.</p>
+  </section>
+
+  <section>
+    <p class="rr-eyebrow">Componentes</p>
+    <h2 class="rr-h2">Piezas para otros diseños</h2>
+    <div class="row">
+      <button class="rr-btn rr-btn--primary" type="button">Seguir el camino</button>
+      <button class="rr-btn rr-btn--secondary" type="button">Ver el mapa</button>
+      <button class="rr-btn rr-btn--ghost" type="button">Acampar</button>
+      <button class="rr-btn rr-btn--primary rr-btn--sm" type="button">Pequeño</button>
+      <span class="rr-chip" id="chip">Mañana</span>
+      <span class="rr-avatar rr-avatar--lg" id="avatar"></span>
+    </div>
+    <div class="rr-card">
+      <div class="row" style="justify-content:space-between"><b>Camino de la sesión</b><span class="rr-muted rr-mono" id="road-label">20 %</span></div>
+      <div style="margin-top:18px"><div class="rr-road" id="road" data-pace="explora" style="--rr-progress:20%"><span class="rr-road__rogue"></span><span class="rr-road__camp"></span></div></div>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <div class="rr-field" style="flex:1 1 260px"><label for="name">Nombre del plugin</label><input class="rr-input" id="name" value="rogue-road"><small>En minúsculas, con guiones.</small></div>
+      <div class="rr-toast" style="flex:1 1 260px">Atardecer: queda poca luz. Piensa dónde acampar.</div>
+    </div>
+    <div class="chat">
+      <div class="rr-msg rr-msg--user">¿Cuánto camino nos queda antes de compactar?</div>
+      <div class="rr-msg rr-msg--assistant">Vamos por la tarde del recorrido. Cuando atardezca, <code class="rr-mono">/acampar</code> compacta la conversación y vuelve a amanecer.</div>
+    </div>
+    <code class="rr-code">/plugin install rogue-road@rogue-mods</code>
+  </section>
+</div>
+<script type="module">
+  import { scene, skyAt, rogueGlyph, BRAND } from './scene.js'
+  const PHASES = [['alba', 'Alba', 0], ['manana', 'Mañana', 15], ['mediodia', 'Mediodía', 35], ['tarde', 'Tarde', 55], ['atardecer', 'Atardecer', 75], ['anochecer', 'Anochecer', 90]]
+  const $ = id => document.getElementById(id)
+  let pace = 'explora'
+  const mode = () => document.documentElement.dataset.theme === 'dark' ? 'oscuro' : document.documentElement.dataset.theme === 'light' ? 'claro' : 'auto'
+  const phaseOf = p => PHASES.filter(x => p >= x[2]).pop()
+  function draw () {
+    const p = Number($('ctx').value)
+    const ph = phaseOf(p)
+    $('stage').innerHTML = scene({ percent: p, pace, mode: mode() })
+    $('pct').textContent = `${p} %`; $('road-label').textContent = `${p} %`
+    $('phase-name').textContent = ph[1]; $('chip').textContent = ph[1]
+    document.body.dataset.rrPhase = ph[0]
+    $('road').style.setProperty('--rr-progress', `${p}%`); $('road').dataset.pace = pace
+  }
+  $('ctx').addEventListener('input', draw)
+  $('pace').addEventListener('click', () => { pace = pace === 'explora' ? 'espera' : 'explora'; $('pace').textContent = pace === 'explora' ? 'El explorador espera' : 'El explorador camina'; draw() })
+  $('theme').addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme !== 'dark'
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+    $('theme').textContent = dark ? 'Cambiar a claro' : 'Cambiar a oscuro'; draw()
+  })
+  $('phases').innerHTML = PHASES.map(([id, name, from], i) => {
+    const s = skyAt(from + 5)
+    const to = PHASES[i + 1]?.[2] ?? 100
+    return `<div class="phase" style="background:linear-gradient(${s.top},${s.mid} 60%,${s.horizon});color:${from >= 15 && from < 75 ? BRAND.navy : BRAND.cream}"><b>${name}</b><span>${from}–${to} %</span></div>`
+  }).join('')
+  $('avatar').innerHTML = `<svg viewBox="-34 -92 70 96"><style>.ink,.cape{fill:${BRAND.navy}}.face{fill:${BRAND.cream}}.scarf,.lamp{fill:${BRAND.orange}}.pole{stroke:${BRAND.navy};stroke-width:2.4;stroke-linecap:round}.leg{stroke:${BRAND.navy};stroke-width:4.2;stroke-linecap:round}.lamp-glow,.dust,.bubble{display:none}</style>${rogueGlyph}</svg>`
+  draw()
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+/* The Rogue Roadmap design system: tokens.
+   Generated from tokens.json by scripts/build.mts. Do not edit by hand.
+
+   Light values on :root; dark under prefers-color-scheme (unless
+   data-theme="light") and under data-theme="dark", so an explicit choice
+   wins both ways. A day phase is chosen with data-rr-phase on any element. */
+
+:root {
+  --rr-color-brand-navy: #0A1B35;
+  --rr-color-brand-orange: #F7792C;
+  --rr-color-brand-cream: #FCF3E1;
+  --rr-color-navy-200: #D9DEE7;
+  --rr-color-navy-300: #B5BDCB;
+  --rr-color-navy-400: #8A94A8;
+  --rr-color-navy-500: #56627A;
+  --rr-color-navy-600: #3A5078;
+  --rr-color-navy-700: #23395E;
+  --rr-color-navy-750: #152B4D;
+  --rr-color-navy-800: #122746;
+  --rr-color-navy-850: #0E213F;
+  --rr-color-navy-900: #0A1B35;
+  --rr-color-navy-950: #050E1C;
+  --rr-color-orange-100: #FFE6D3;
+  --rr-color-orange-200: #FDBA8A;
+  --rr-color-orange-300: #FB9B57;
+  --rr-color-orange-500: #F7792C;
+  --rr-color-orange-600: #DB5F14;
+  --rr-color-orange-700: #A8470F;
+  --rr-color-orange-800: #7A340C;
+  --rr-color-cream-50: #FFFCF6;
+  --rr-color-cream-100: #FCF6EA;
+  --rr-color-cream-200: #FCF3E1;
+  --rr-color-cream-300: #F4EAD6;
+  --rr-color-cream-400: #EDE1C9;
+  --rr-color-cream-500: #DCCFB6;
+  --rr-color-cream-600: #B9AA8D;
+  --rr-color-cream-700: #AFAA9F;
+  --rr-color-role-danger-light: #C42B3A;
+  --rr-color-role-danger-dark: #FF7A82;
+  --rr-color-role-success-light: #2F7D55;
+  --rr-color-role-success-dark: #5BD49A;
+  --rr-color-role-warning-light: #8F5A0F;
+  --rr-color-role-warning-dark: #F5B544;
+  --rr-color-role-info-light: #5A47BF;
+  --rr-color-role-info-dark: #B3A6FF;
+  --rr-font-family-display: Outfit, ui-sans-serif, system-ui, sans-serif;
+  --rr-font-family-body: Outfit, ui-sans-serif, system-ui, sans-serif;
+  --rr-font-family-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --rr-font-weight-regular: 400;
+  --rr-font-weight-medium: 500;
+  --rr-font-weight-semibold: 600;
+  --rr-font-weight-bold: 700;
+  --rr-font-size-xs: 12px;
+  --rr-font-size-sm: 14px;
+  --rr-font-size-md: 16px;
+  --rr-font-size-lg: 20px;
+  --rr-font-size-xl: 25px;
+  --rr-font-size-2xl: 31px;
+  --rr-font-size-3xl: 39px;
+  --rr-font-size-4xl: 49px;
+  --rr-font-line-height-tight: 1.1;
+  --rr-font-line-height-snug: 1.3;
+  --rr-font-line-height-normal: 1.55;
+  --rr-font-tracking-tight: -0.02em;
+  --rr-font-tracking-normal: 0em;
+  --rr-font-tracking-label: 0.08em;
+  --rr-space-0: 0px;
+  --rr-space-1: 2px;
+  --rr-space-2: 4px;
+  --rr-space-3: 8px;
+  --rr-space-4: 12px;
+  --rr-space-5: 16px;
+  --rr-space-6: 24px;
+  --rr-space-7: 32px;
+  --rr-space-8: 48px;
+  --rr-space-9: 64px;
+  --rr-space-10: 96px;
+  --rr-radius-xs: 4px;
+  --rr-radius-sm: 8px;
+  --rr-radius-md: 12px;
+  --rr-radius-lg: 18px;
+  --rr-radius-xl: 24px;
+  --rr-radius-emblem: 18%;
+  --rr-radius-full: 999px;
+  --rr-shadow-sm: 0 1px 2px rgba(10, 27, 53, 0.10);
+  --rr-shadow-md: 0 4px 14px rgba(10, 27, 53, 0.12);
+  --rr-shadow-lg: 0 14px 40px rgba(10, 27, 53, 0.18);
+  --rr-shadow-glow: 0 0 0 4px rgba(247, 121, 44, 0.28);
+  --rr-motion-duration-fast: 120ms;
+  --rr-motion-duration-base: 200ms;
+  --rr-motion-duration-slow: 320ms;
+  --rr-motion-duration-step: 800ms;
+  --rr-motion-duration-breathe: 4000ms;
+  --rr-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --rr-motion-easing-walk: cubic-bezier(0.45, 0, 0.55, 1);
+  --rr-bg-page: #F4EAD6;
+  --rr-bg-surface: #FCF6EA;
+  --rr-bg-raised: #FFFCF6;
+  --rr-bg-sunken: #EDE1C9;
+  --rr-bg-inverse: #0A1B35;
+  --rr-text-primary: #0A1B35;
+  --rr-text-secondary: #2E3D57;
+  --rr-text-muted: #56627A;
+  --rr-text-inverse: #FCF3E1;
+  --rr-border: #DCCFB6;
+  --rr-border-strong: #B9AA8D;
+  --rr-accent: #F7792C;
+  --rr-accent-hover: #DB5F14;
+  --rr-accent-text: #A8470F;
+  --rr-on-accent: #0A1B35;
+  --rr-focus: #DB5F14;
+  --rr-phase-accent: var(--rr-accent);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --rr-bg-page: #0A1B35;
+    --rr-bg-surface: #0E213F;
+    --rr-bg-raised: #152B4D;
+    --rr-bg-sunken: #050E1C;
+    --rr-bg-inverse: #FCF3E1;
+    --rr-text-primary: #FCF3E1;
+    --rr-text-secondary: #D9D0BF;
+    --rr-text-muted: #AFAA9F;
+    --rr-text-inverse: #0A1B35;
+    --rr-border: #23395E;
+    --rr-border-strong: #3A5078;
+    --rr-accent: #F7792C;
+    --rr-accent-hover: #FB9B57;
+    --rr-accent-text: #FB9B57;
+    --rr-on-accent: #0A1B35;
+    --rr-focus: #FB9B57;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --rr-bg-page: #0A1B35;
+  --rr-bg-surface: #0E213F;
+  --rr-bg-raised: #152B4D;
+  --rr-bg-sunken: #050E1C;
+  --rr-bg-inverse: #FCF3E1;
+  --rr-text-primary: #FCF3E1;
+  --rr-text-secondary: #D9D0BF;
+  --rr-text-muted: #AFAA9F;
+  --rr-text-inverse: #0A1B35;
+  --rr-border: #23395E;
+  --rr-border-strong: #3A5078;
+  --rr-accent: #F7792C;
+  --rr-accent-hover: #FB9B57;
+  --rr-accent-text: #FB9B57;
+  --rr-on-accent: #0A1B35;
+  --rr-focus: #FB9B57;
+  color-scheme: dark;
+}
+
+[data-rr-phase="alba"] {
+  --rr-phase-accent: #E0708D;
+  --rr-sky-top: #2B2F5C;
+  --rr-sky-mid: #8C6A9E;
+  --rr-sky-horizon: #F6B38E;
+}
+
+[data-rr-phase="manana"] {
+  --rr-phase-accent: #F7792C;
+  --rr-sky-top: #4D6FA3;
+  --rr-sky-mid: #C9A6B8;
+  --rr-sky-horizon: #FAD3A8;
+}
+
+[data-rr-phase="mediodia"] {
+  --rr-phase-accent: #F7792C;
+  --rr-sky-top: #5C9FD8;
+  --rr-sky-mid: #A8D3F0;
+  --rr-sky-horizon: #FCEFD6;
+}
+
+[data-rr-phase="tarde"] {
+  --rr-phase-accent: #F2672E;
+  --rr-sky-top: #5B7FB0;
+  --rr-sky-mid: #E8B98A;
+  --rr-sky-horizon: #F7A15A;
+}
+
+[data-rr-phase="atardecer"] {
+  --rr-phase-accent: #EC553F;
+  --rr-sky-top: #2C3566;
+  --rr-sky-mid: #C2607A;
+  --rr-sky-horizon: #F7792C;
+}
+
+[data-rr-phase="anochecer"] {
+  --rr-phase-accent: #8C7BEA;
+  --rr-sky-top: #0A1B35;
+  --rr-sky-mid: #2C2F5E;
+  --rr-sky-horizon: #8A3F5A;
+}

@@ -1,0 +1,265 @@
+/* The Rogue Roadmap design system: components.
+   Needs tokens.css first. Every color comes from a token, so each component
+   works in light, dark and every day phase with no extra rule. */
+
+/* ─── Base and type ─────────────────────────────────────────────────── */
+
+.rr {
+  font-family: var(--rr-font-family-body);
+  font-size: var(--rr-font-size-md);
+  line-height: var(--rr-font-line-height-normal);
+  color: var(--rr-text-primary);
+  background: var(--rr-bg-page);
+}
+
+.rr-display, .rr-h1, .rr-h2, .rr-h3, .rr-h4 {
+  font-family: var(--rr-font-family-display);
+  line-height: var(--rr-font-line-height-tight);
+  letter-spacing: var(--rr-font-tracking-tight);
+  text-wrap: balance;
+  margin: 0;
+}
+.rr-display { font-size: var(--rr-font-size-4xl); font-weight: var(--rr-font-weight-bold); }
+.rr-h1 { font-size: var(--rr-font-size-3xl); font-weight: var(--rr-font-weight-bold); }
+.rr-h2 { font-size: var(--rr-font-size-2xl); font-weight: var(--rr-font-weight-semibold); }
+.rr-h3 { font-size: var(--rr-font-size-xl); font-weight: var(--rr-font-weight-semibold); line-height: var(--rr-font-line-height-snug); }
+.rr-h4 { font-size: var(--rr-font-size-lg); font-weight: var(--rr-font-weight-semibold); line-height: var(--rr-font-line-height-snug); }
+
+/* The orange rule under a title, from the brand banners. */
+.rr-rule::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 4px;
+  margin-top: var(--rr-space-4);
+  border-radius: var(--rr-radius-full);
+  background: var(--rr-phase-accent);
+}
+
+.rr-eyebrow {
+  font-size: var(--rr-font-size-xs);
+  font-weight: var(--rr-font-weight-semibold);
+  letter-spacing: var(--rr-font-tracking-label);
+  text-transform: uppercase;
+  color: var(--rr-accent-text);
+}
+
+.rr-muted { color: var(--rr-text-muted); }
+.rr-mono, .rr-code { font-family: var(--rr-font-family-mono); }
+
+/* ─── Button ────────────────────────────────────────────────────────── */
+
+.rr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rr-space-3);
+  min-height: 40px;
+  padding: 0 var(--rr-space-5);
+  border: 1.5px solid transparent;
+  border-radius: var(--rr-radius-full);
+  font: var(--rr-font-weight-semibold) var(--rr-font-size-sm) / 1 var(--rr-font-family-body);
+  cursor: pointer;
+  transition: background var(--rr-motion-duration-fast) var(--rr-motion-easing-standard),
+    border-color var(--rr-motion-duration-fast) var(--rr-motion-easing-standard);
+}
+.rr-btn:focus-visible { outline: none; box-shadow: var(--rr-shadow-glow); }
+.rr-btn--primary { background: var(--rr-accent); color: var(--rr-on-accent); }
+.rr-btn--primary:hover { background: var(--rr-accent-hover); }
+.rr-btn--secondary { background: transparent; color: var(--rr-text-primary); border-color: var(--rr-text-primary); }
+.rr-btn--secondary:hover { background: var(--rr-bg-sunken); }
+.rr-btn--ghost { background: transparent; color: var(--rr-text-secondary); }
+.rr-btn--ghost:hover { background: var(--rr-bg-sunken); color: var(--rr-text-primary); }
+.rr-btn--sm { min-height: 32px; padding: 0 var(--rr-space-4); font-size: var(--rr-font-size-xs); }
+.rr-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ─── Chip: a phase, a state, a tag ─────────────────────────────────── */
+
+.rr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rr-space-2);
+  padding: var(--rr-space-1) var(--rr-space-4);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-full);
+  background: var(--rr-bg-surface);
+  color: var(--rr-text-secondary);
+  font-size: var(--rr-font-size-xs);
+  font-weight: var(--rr-font-weight-medium);
+}
+.rr-chip::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rr-phase-accent);
+}
+
+/* ─── Card ──────────────────────────────────────────────────────────── */
+
+.rr-card {
+  padding: var(--rr-space-6);
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-lg);
+  background: var(--rr-bg-surface);
+}
+.rr-card--raised { background: var(--rr-bg-raised); border-color: transparent; box-shadow: var(--rr-shadow-md); }
+
+/* ─── Field ─────────────────────────────────────────────────────────── */
+
+.rr-field { display: grid; gap: var(--rr-space-2); }
+.rr-field label { font-size: var(--rr-font-size-sm); font-weight: var(--rr-font-weight-medium); }
+.rr-input {
+  min-height: 40px;
+  padding: 0 var(--rr-space-4);
+  border: 1.5px solid var(--rr-border-strong);
+  border-radius: var(--rr-radius-sm);
+  background: var(--rr-bg-raised);
+  color: var(--rr-text-primary);
+  font: inherit;
+}
+.rr-input:focus { outline: none; border-color: var(--rr-focus); box-shadow: var(--rr-shadow-glow); }
+.rr-field small { color: var(--rr-text-muted); font-size: var(--rr-font-size-xs); }
+
+/* ─── Road: progress drawn as the path behind and ahead of the rogue ─
+   <div class="rr-road" style="--rr-progress: 42%" data-pace="explora">
+     <span class="rr-road__rogue"></span></div>
+   The trail behind is solid orange, the way ahead is dashed, the camp (▲)
+   waits at the end. data-pace="espera" stops the marker's walk. */
+
+.rr-road {
+  --rr-progress: 0%;
+  position: relative;
+  height: 24px;
+  margin-inline-end: 18px;
+}
+.rr-road::before, .rr-road::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: var(--rr-radius-full);
+}
+.rr-road::before {
+  left: 0;
+  right: 0;
+  background: repeating-linear-gradient(90deg, var(--rr-border-strong) 0 4px, transparent 4px 10px);
+}
+.rr-road::after {
+  left: 0;
+  width: var(--rr-progress);
+  height: 4px;
+  background: var(--rr-accent);
+}
+.rr-road__camp {
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-60%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 13px solid var(--rr-text-muted);
+}
+.rr-road__rogue {
+  position: absolute;
+  z-index: 1;
+  left: var(--rr-progress);
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--rr-text-primary);
+  border: 2px solid var(--rr-bg-page);
+  border-radius: 2px;
+}
+.rr-road[data-pace="explora"] .rr-road__rogue { animation: rr-stride var(--rr-motion-duration-step) var(--rr-motion-easing-walk) infinite; }
+.rr-road[data-pace="espera"] .rr-road__rogue { background: var(--rr-bg-page); border-color: var(--rr-text-primary); box-shadow: var(--rr-shadow-glow); }
+
+@keyframes rr-stride {
+  0%, 100% { transform: translate(-50%, -50%) rotate(45deg); }
+  50% { transform: translate(-50%, -70%) rotate(45deg); }
+}
+
+/* ─── Avatar: the explorer in a circle ──────────────────────────────── */
+
+.rr-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(var(--rr-sky-top, var(--rr-color-navy-700)), var(--rr-sky-horizon, var(--rr-color-orange-200)));
+}
+.rr-avatar svg { width: 82%; height: auto; }
+.rr-avatar--lg { width: 96px; height: 96px; }
+
+/* ─── Sky: a band painted with the current phase ────────────────────── */
+
+.rr-sky {
+  background: linear-gradient(180deg, var(--rr-sky-top) 0%, var(--rr-sky-mid) 55%, var(--rr-sky-horizon) 100%);
+  color: var(--rr-color-cream-200);
+}
+
+/* ─── Messages ──────────────────────────────────────────────────────── */
+
+.rr-msg {
+  max-width: 64ch;
+  padding: var(--rr-space-4) var(--rr-space-5);
+  line-height: var(--rr-font-line-height-normal);
+}
+.rr-msg--user {
+  margin-inline-start: auto;
+  border-radius: var(--rr-radius-lg) var(--rr-radius-lg) var(--rr-radius-xs) var(--rr-radius-lg);
+  background: var(--rr-bg-inverse);
+  color: var(--rr-text-inverse);
+}
+.rr-msg--assistant {
+  border: 1px solid var(--rr-border);
+  border-radius: var(--rr-radius-xs) var(--rr-radius-lg) var(--rr-radius-lg) var(--rr-radius-lg);
+  background: var(--rr-bg-raised);
+}
+
+/* ─── Toast ─────────────────────────────────────────────────────────── */
+
+.rr-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--rr-space-4);
+  padding: var(--rr-space-4) var(--rr-space-5);
+  border-radius: var(--rr-radius-md);
+  background: var(--rr-bg-inverse);
+  color: var(--rr-text-inverse);
+  box-shadow: var(--rr-shadow-lg);
+  font-size: var(--rr-font-size-sm);
+}
+.rr-toast::before {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--rr-phase-accent);
+}
+
+/* ─── Code ──────────────────────────────────────────────────────────── */
+
+.rr-code {
+  display: block;
+  overflow-x: auto;
+  padding: var(--rr-space-5);
+  border-radius: var(--rr-radius-md);
+  background: var(--rr-color-navy-900);
+  color: var(--rr-color-cream-200);
+  font-size: var(--rr-font-size-sm);
+  line-height: 1.6;
+}
+:root[data-theme="dark"] .rr-code { background: var(--rr-bg-sunken); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rr-code { background: var(--rr-bg-sunken); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-road__rogue { animation: none !important; }
+  .rr-btn { transition: none; }
+}

@@ -21,6 +21,7 @@ In the desktop app: + next to the prompt box → Plugins → Add marketplace (`t
 |---|---|---|
 | [`rasenshuriken`](rasenshuriken/) | Theme | In progress |
 | [`sharingan`](sharingan/) | Theme | In progress |
+| [`rogue-road`](rogue-road/) | Theme | In progress |
 
 Use one **theme** at a time: the last theme set wins. Other mods (panels, rows, commands) combine freely.
 
@@ -39,6 +40,10 @@ Add your local clone as a marketplace and install from it: Claude Code then read
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the layout of a mod and the checks.
+
+### Design system
+
+[`design-system/`](design-system/) holds The Rogue Roadmap design system — tokens (JSON, CSS), components, the explorer and road assets — and a skill that applies it to Claude Desktop chats and projects. It is not a plugin.
 
 ## Español
 
