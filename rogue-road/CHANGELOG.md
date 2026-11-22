@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-22
+
+### Fixed
+- The free space in the desktop context bar blended into the card. It is now a striped track in the theme's two border tones, like `/context`'s `░`: clearly room still to fill, lighter than anything used.
+
 ## [0.10.1] - 2026-11-22
 
 ### Fixed

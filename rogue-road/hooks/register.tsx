@@ -862,15 +862,24 @@ export const register: Register = (on, options) => {
         </Box>
         {detailed && segments.length > 0 && isGraphic && (
           <Box flexDirection="row" width="100%" height={1}>
-            {segments.map(({ row, cells }) => (
-              <Box
-                key={row.name}
-                flexGrow={cells}
-                flexShrink={1}
-                height={1}
-                backgroundColor={row.kind === 'free' ? 'border' : row.kind === 'buffer' ? 'text-muted' : row.color}
-              />
-            ))}
+            {segments.map(({ row, cells }) =>
+              row.kind === 'free' ? (
+                // El espacio por llenar: un riel rayado, como el ░ de /context.
+                <Box key={row.name} flexGrow={cells} flexShrink={1} height={1} flexDirection="row">
+                  {Array.from({ length: Math.max(4, Math.round((cells / 1000) * 64)) }, (_, k) => (
+                    <Box key={`libre-${k}`} flexGrow={1} height={1} backgroundColor={k % 2 === 0 ? 'border-strong' : 'border'} />
+                  ))}
+                </Box>
+              ) : (
+                <Box
+                  key={row.name}
+                  flexGrow={cells}
+                  flexShrink={1}
+                  height={1}
+                  backgroundColor={row.kind === 'buffer' ? 'text-muted' : row.color}
+                />
+              ),
+            )}
           </Box>
         )}
         {detailed && segments.length > 0 && !isGraphic && (

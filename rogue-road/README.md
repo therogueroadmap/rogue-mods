@@ -38,7 +38,7 @@ What it adds:
 
 - **Three languages.** Spanish, English or French for the row, the logbook, the toasts, the badge and the requests to Claude; the commands stay in English.
 
-Version 0.10.1.
+Version 0.10.2.
 
 ### Install
 
