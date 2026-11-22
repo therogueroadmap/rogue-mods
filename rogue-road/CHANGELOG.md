@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.10.4] - 2026-11-22
+
+### Changed
+- The desktop context bar is back to how 0.10.0 drew it: the free space in `subtle` and the autocompaction buffer in `inactive`, solid blocks the band paints reliably.
+
 ## [0.10.3] - 2026-11-22
 
 ### Fixed
