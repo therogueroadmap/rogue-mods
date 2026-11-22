@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-22
+
+### Changed
+- The explorer's vignette and the context badge are back on the left side of the window, as in 0.3.0.
+
 ## [0.3.1] - 2026-11-22
 
 ### Changed
