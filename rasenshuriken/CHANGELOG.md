@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Plugin icon (`.claude-plugin/icon.png`).
+
 ## [0.2.0] - 2026-11-22
 
 ### Added
