@@ -25,7 +25,7 @@ What it adds:
 - A badge in the top-left corner, always in view: the explorer, a ring with the context used, the phase and its state.
 - Cream (light) and navy (dark) palettes from the brand, with an accent that follows the time of day.
 - Message styles: the person's messages in navy (cream at night), Claude's on paper.
-- A row above the prompt and a status line entry, in every surface including the terminal: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
+- A row above the prompt in every surface including the terminal, and a status line entry while the row is hidden: `◓ Alba  ━━━◆┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ▲  12 % · explorando`.
 - A toast when the phase changes, `/rogue-road-mod` with the details and `/make-camp` to compact.
 - **Milestones on the road.** Each commit, push, pull request or test run that passes plants a small flag on the road where it happened in the context (orange commit, green tests, violet PR, cream push). The row above the prompt marks them with `•`. A new dawn starts a fresh road; the logbook keeps the old ones.
 - **Weather that follows the work.** Two failed tools in the last ten cloud the sky, four bring rain, and tests that pass clear it. A usage limit over 80 % brings a storm with distant lightning. Each change comes with a toast.
@@ -38,7 +38,7 @@ What it adds:
 
 - **Three languages.** Spanish, English or French for the row, the logbook, the toasts, the badge and the requests to Claude; the commands stay in English.
 
-Version 1.0.0.
+Version 1.0.1.
 
 ### Install
 
@@ -46,6 +46,8 @@ Version 1.0.0.
 /plugin marketplace add therogueroadmap/rogue-mods
 /plugin install rogue-road@rogue-mods
 ```
+
+Restart Claude Code after installing so the theme and the row load.
 
 ### Settings
 
@@ -66,23 +68,25 @@ The same row draws in the terminal and in the desktop app:
 Opus 5.5 · límite 5 h 23 % (reinicia 18:00) · límite 7 días 41 % · autocompacta a 967k · ≈ US$ 3.20 (estimado)
 ```
 
+The bar fills the whole width of the row. Before the first model response of the window (a fresh session, or right after compacting) the context has no measured figure yet, so the row (and the status line, while the row is hidden) shows the local estimate of the breakdown with a `~`, as in `~4 % · ~43k/1M`, and the explorer walks the mini road by it; from the first response on it shows the measured figure. The day's phase follows the measured figure only.
+
 The bar and the legend are `/context`'s breakdown, each category in the colour `/context` gives it, estimated locally after each model response (no extra requests). The cost is an estimate, not the bill. `▴` / `▾` shows or hides everything below the first line, `☰` opens the logbook, `♪` turns the sound on or off and `Ocultar` hides the row.
 
 ### Behaviour in the terminal (CLI)
 
-The terminal draws no backdrop or colors, so the mod there is the row above the prompt — a miniature road where `━` is the ground covered, `◆` the explorer walking, `◇` the explorer waiting for you and `▲` the camp — plus the status line, the phase and weather toasts, the logbook pane (opened with `/logbook`) and the commands. The terminal plays no sound. The `Ocultar` button hides the row until the next `/rogue-road-mod`.
+The terminal draws no backdrop or colors, so the mod there is the row above the prompt — a miniature road where `━` is the ground covered, `◆` the explorer walking, `◇` the explorer waiting for you and `▲` the camp — plus the status line while the row is hidden, the phase and weather toasts, the logbook pane (opened with `/logbook`) and the commands. The terminal plays no sound. The `Ocultar` button hides the row until the next `/rogue-road-mod`; while it is hidden, the phase and the context % move to the status line under the prompt.
 
 ### Requirements
 
 - Claude Code with mod support (hooks modules). The mod API is early access and may change between releases.
-- The backdrop, colors and message styles only draw in the desktop and mobile apps. The terminal shows the row above the prompt, the status line and the commands.
+- The backdrop, colors and message styles only draw in the desktop and mobile apps. The terminal shows the row above the prompt (or the status line, while the row is hidden) and the commands.
 - In `auto` mode the backdrop reads the app's mode on desktop; on mobile it may stay light. Pick `claro` or `oscuro` there.
 - `/make-camp` compacts between turns; it is queued and runs as soon as Claude is free.
 - Use one theme mod at a time: the last theme set wins.
 
 ### Status
 
-Stable (1.0.0).
+Stable (1.0.1).
 
 ## Español
 
@@ -92,7 +96,7 @@ El explorador solo camina mientras Claude trabaja. Cuando Claude te necesita (te
 
 El explorador vive en una viñeta en la esquina inferior izquierda: camina en el lugar con el mundo desplazándose detrás mientras Claude trabaja, y se detiene a esperarte cuando Claude te necesita. La luz, las sombras, la bruma, los pájaros, las luciérnagas y la fogata siguen la hora del día.
 
-Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y navy (oscuro) del brand con un acento que sigue la hora del día, estilos de mensaje, una banda sobre el prompt con un camino en miniatura que también funciona en la terminal, una entrada en la línea de estado, avisos al cambiar de fase y los comandos `/rogue-road-mod` y `/make-camp`. Desde la 0.6.0 el viaje también cuenta lo que pasa en la sesión:
+Agrega un fondo animado (apps de escritorio y móvil), paletas crema (claro) y navy (oscuro) del brand con un acento que sigue la hora del día, estilos de mensaje, una banda sobre el prompt con un camino en miniatura que también funciona en la terminal, una entrada en la línea de estado mientras la banda está oculta, avisos al cambiar de fase y los comandos `/rogue-road-mod` y `/make-camp`. Desde la 0.6.0 el viaje también cuenta lo que pasa en la sesión:
 
 - **Hitos en el camino:** cada commit, push, PR o ejecución de tests que pasa deja un banderín donde ocurrió (naranja, verde, violeta o crema). En la banda se ven como `•`.
 - **Clima:** dos herramientas fallidas de las últimas diez nublan el cielo, cuatro traen lluvia y los tests en verde lo despejan. Un límite de uso sobre el 80 % trae tormenta.

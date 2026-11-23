@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-22
+
+### Fixed
+- The context bar in the terminal stopped at 160 columns and two short of the row's edge: it now fills the band's whole `bodyColumns`, which already leaves out the engine's `[-]`. On a 210-column terminal it was about 50 cells short. The desktop and mobile bar keep their previous width.
+- The row showed `—` instead of the context percentage until the first model response of the window (a fresh session, or right after compacting), because `context.percent` is absent until then. It now shows the breakdown's local estimate with a `~` (`~4 % · ~43k/1M`), in the row (and in the status line, while the row is hidden), and the explorer walks the mini road by it; it switches to the measured figure once a response arrives. The day's phase still follows the measured figure only, so a phase change, its toast and its logbook entry come from a real measurement.
+- In the terminal alone, with no desktop or mobile app attached to draw the theme, every event logged `rogue-road: rogue-road: no pintado: …` to the conversation. The reason now goes to the debug log, once per reason and without the doubled name, and the theme still paints as soon as an app attaches.
+
+### Changed
+- The status line under the prompt only shows while the row above the prompt is hidden (`Ocultar`). With the row in view it repeated the same phase and percentage, and the terminal draws a plugin's status line as a warning (`⚠`, in yellow). `/rogue-road-mod` brings the row back and clears the line.
+
 ## [1.0.0] - 2026-11-22
 
 First stable release: the road, the explorer, the day's phases, milestones, weather, companions, the logbook, ambient sound, the interactive backdrop, the context ledger above the prompt, the closing commands (`/make-camp`, `/clear-trail`, `/trail-log`, `/pass-the-map`) and the mod's own language (es, en, fr). The plugin icon now comes from the brand build (`brand/build.py`, resvg 0.50.0), as the other mods' icons do.

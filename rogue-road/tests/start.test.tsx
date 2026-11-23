@@ -19,6 +19,9 @@ test('session.start fija la fase Mediodía al 40 % y el explorador espera', asyn
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   expect(sets.length).toBe(1)
   expect(sets[0]?.backdrop?.scene).toBe('fase-3-auto')
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'terminal', props: { hasSurvey: false } } as never)
+  await band.press({ key: 'ocultar' })
+  await band.unmount()
   expect(status.some(s => s.includes('Mediodía') && s.includes('esperándote'))).toBe(true)
 })
 
@@ -448,4 +451,118 @@ test('/language cambia solo el idioma del mod, sin tocar el tema de la app', asy
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   expect((await $.command.run(run('language'))).text?.startsWith('Mod language: English')).toBe(true)
   expect((await $.command.run(run('language', 'fr'))).text?.startsWith('Langue du mod : français')).toBe(true)
+})
+
+// ─── 1.0.1: la banda ocupa todo el ancho y estima el contexto sin respuesta ─
+
+const ledgerUsage = (percent: number | undefined) => (_: unknown, e: unknown) => ({
+  value: {
+    startedAt: 0,
+    context: {
+      window: 1000000,
+      ...(percent === undefined ? {} : { tokens: percent * 10000, percent }),
+      ...((e as { breakdown?: string }).breakdown === undefined ? {} : {
+        breakdown: {
+          categories: [
+            { name: 'System prompt', tokens: 10000, color: 'promptBorder', kind: 'used', isDeferred: false },
+            { name: 'Autocompact buffer', tokens: 33000, color: 'inactive', kind: 'buffer', isDeferred: false },
+            { name: 'Free space', tokens: 957000, color: 'inactive', kind: 'free', isDeferred: false },
+          ],
+          totalTokens: 43000, maxTokens: 1000000, rawMaxTokens: 1000000, autocompactSource: 'model-default', percentage: 4,
+          gridRows: [], model: 'Opus 5.5', memoryFiles: [], mcpTools: [], agents: [], isAutoCompactEnabled: true, autoCompactThreshold: 967000,
+        },
+      }),
+    },
+    rateLimits: [],
+  } as never,
+})
+
+const startWith = (on: On, percent: number | undefined, status: string[] = []) => {
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', ledgerUsage(percent))
+  on('theme.set', () => ({ value: { isDrawn: true, requestId: 't' } }))
+  on('ui.status', (_, e) => { status.push((e as { text?: string }).text ?? ''); return { value: undefined } })
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+}
+
+test('en la terminal, la barra del desglose ocupa todo bodyColumns, también pasadas las 160', async ($, on) => {
+  startWith(on, 4)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for (const columns of [100, 210]) {
+    const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'terminal', props: { hasSurvey: false, bodyColumns: columns } } as never)
+    const bar = await band.find({ type: 'Text', text: /^[█▒░]+$/ })
+    expect(bar?.text?.length).toBe(columns)
+    await band.unmount()
+  }
+})
+
+test('en el escritorio, la barra conserva el tope de 160 columnas por la letra proporcional', async ($, on) => {
+  startWith(on, 4)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'desktop', props: { hasSurvey: false, bodyColumns: 400 } } as never)
+  const bar = await band.find({ type: 'Text', text: /^[█▒░]+$/ })
+  expect(bar?.text?.length).toBe(Math.round(160 * 0.72))
+  await band.unmount()
+})
+
+test('antes de la primera respuesta, la banda y la línea de estado muestran el % estimado con ~', async ($, on) => {
+  const status: string[] = []
+  startWith(on, undefined, status)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'terminal', props: { hasSurvey: false, bodyColumns: 120 } } as never)
+  expect((await band.find({ type: 'Text', text: /~4 % · ~43k\/1M/ })) !== undefined).toBe(true)
+  await band.press({ key: 'ocultar' })
+  await band.unmount()
+  expect(status[status.length - 1]?.includes('~4 %')).toBe(true)
+})
+
+test('con la banda a la vista no hay línea de estado (el ⚠ amarillo); al ocultarla vuelve y /rogue-road-mod la quita', async ($, on) => {
+  const status: string[] = []
+  startWith(on, 7, status)
+  on('ui.log', () => ({ value: undefined }))
+  on('session.surfaces', () => ({ value: [] }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  expect(status.length > 0).toBe(true)
+  expect(status.every(s => s === '')).toBe(true)
+
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'terminal', props: { hasSurvey: false } } as never)
+  await band.press({ key: 'ocultar' })
+  await band.unmount()
+  expect(status[status.length - 1]?.includes('7 %')).toBe(true)
+
+  await $.command.run(run('rogue-road-mod'))
+  expect(status[status.length - 1]).toBe('')
+})
+
+test('con la medida real, la banda muestra el % sin ~', async ($, on) => {
+  startWith(on, 15)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const band = await $.ui.mount({ plugin: 'rogue-road', component: 'AbovePrompt', surface: 'terminal', props: { hasSurvey: false, bodyColumns: 120 } } as never)
+  expect((await band.find({ type: 'Text', text: /15 % · 150k\/1M/ })) !== undefined).toBe(true)
+  expect((await band.find({ type: 'Text', text: /~/ })) === undefined).toBe(true)
+  await band.unmount()
+})
+
+test('en la terminal sola, el "no pintado" no llena la conversación: va una vez al log de depuración', async ($, on) => {
+  const logs: { text: string; to?: string }[] = []
+  on('command.register', (_, e) => ({ value: { command: (e as { name: string }).name } }))
+  on('session.usage', ledgerUsage(4))
+  on('theme.set', () => ({ value: { isDrawn: false, reason: 'no attached desktop or mobile client draws themes yet' } }))
+  on('ui.status', () => ({ value: undefined }))
+  on('ui.log', (_, e) => { logs.push(e as never); return { value: undefined } })
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.measure', (_, e) => ({ changed: e.changed }))
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  on('turn.complete', () => ({ text: '' }))
+
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for (let i = 0; i < 3; i++) {
+    await $.turn.start({ text: 'hola', turnId: `t${i}` } as never)
+    await $.session.measure({ context: { tokens: 70000, window: 1000000, percent: 7 }, rateLimits: [], changed: ['context'] })
+    await $.turn.complete({ reason: 'answer', answer: 'listo', durationMs: 1, isAborted: false, turnId: `t${i}` } as never)
+  }
+  const painted = logs.filter(l => l.text.includes('no attached'))
+  expect(painted.length).toBe(1)
+  expect(painted[0]?.to).toBe('debug')
+  expect(painted[0]?.text.startsWith('rogue-road:')).toBe(false)
 })

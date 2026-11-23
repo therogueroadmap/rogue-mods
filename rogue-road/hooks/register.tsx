@@ -125,9 +125,20 @@ const look = (i: number, mode: Mode, weather: Weather, isSoundOn: boolean): Them
   },
 })
 
-const statusOf = (trail: Trail, pace: Pace): string => {
+/** El % medido, o el estimado del desglose con `~` mientras no hay medida; '' si no hay ninguno. */
+const percentText = (percent: number | null, book: Ledger | null): string => {
+  if (percent !== null) {
+    return `${percent} %`
+  }
+  const estimate = book?.estimate ?? null
+
+  return estimate === null ? '' : `~${estimate.percent} %`
+}
+
+const statusOf = (trail: Trail, pace: Pace, book: Ledger | null = null): string => {
   const ph = phaseAt(trail.phase)
-  const pct = trail.percent === null ? '' : ` · ${trail.percent} %`
+  const shown = percentText(trail.percent, book)
+  const pct = shown === '' ? '' : ` · ${shown}`
 
   return `${ph.icon} ${ph.name}${pct} · ${pace === 'explora' ? t.walking : t.waiting}`
 }
@@ -137,6 +148,7 @@ const statusOf = (trail: Trail, pace: Pace): string => {
 // el primer evento lo pinta.
 let paintedKey = ''
 let lastDraw = ''
+let loggedDraw = ''
 let soundNote = ''
 
 /** Pinta el tema; si la app no acepta el sonido o el estilo, lo pinta sin ellos. */
@@ -173,9 +185,13 @@ async function paint($: EngineInterface, mode: Mode, isForced = false): Promise<
   const set = await setLook($, look(phase, mode, w, isSound))
   paintedKey = set.isDrawn ? key : ''
   lastDraw = set.isDrawn ? t.draw.painted : t.draw.notPainted(set.reason ?? t.draw.noReason)
-  if (!set.isDrawn) {
-    $.ui.log(`rogue-road: ${lastDraw}`)
+  // Sin app que pinte (la terminal sola) cada evento reintenta, para pintar en cuanto
+  // una se conecte; el motivo va al log de depuración una vez, no a la conversación.
+  // El motor ya antepone el nombre del plugin.
+  if (!set.isDrawn && lastDraw !== loggedDraw) {
+    $.ui.log(lastDraw, { to: 'debug' })
   }
+  loggedDraw = set.isDrawn ? '' : lastDraw
 }
 
 // /make-camp encarga el /compact de Claude Code, que corre en cuanto la sesión
@@ -283,6 +299,18 @@ const isBandHidden = atom({ plugin: 'rogue-road', key: 'isBandHidden' } as const
 const isCampPending = atom({ plugin: 'rogue-road', key: 'isCampPending' } as const, false)
 const isClearPending = atom({ plugin: 'rogue-road', key: 'isClearPending' } as const, false)
 const ledger = atom({ plugin: 'rogue-road', key: 'ledger' } as const, null as Ledger | null)
+
+/**
+ * La línea de estado bajo el prompt, solo con la banda oculta: con la banda a la
+ * vista repetiría lo mismo, y la terminal la dibuja como aviso (⚠, en amarillo).
+ */
+async function refreshStatus($: EngineInterface): Promise<void> {
+  if (await read($, isBandHidden)) {
+    $.ui.status(statusOf(await read($, trail), await read($, pace), await read($, ledger)))
+  } else {
+    $.ui.status(undefined)
+  }
+}
 const isDetailed = atom({ plugin: 'rogue-road', key: 'isDetailed' } as const, true)
 const journal = atom({ plugin: 'rogue-road', key: 'journal' } as const, [] as Entry[])
 const weather = atom({ plugin: 'rogue-road', key: 'weather' } as const, 'despejado' as Weather)
@@ -420,7 +448,7 @@ async function setLanguage($: EngineInterface, config: Lang, next: Lang): Promis
   await update($, language, () => next)
   await $.store.set(LANGUAGE_KEY, { lang: next, config })
   await registerCommands($)
-  $.ui.status(statusOf(await read($, trail), await read($, pace)))
+  await refreshStatus($)
   if ((await $.ui.panes()).some(pane => pane.id === PANE)) {
     await $.ui.open({ id: PANE, title: t.pane.title })
   }
@@ -508,6 +536,7 @@ async function refreshLedger($: EngineInterface): Promise<void> {
   const next: Ledger = {
     tokens: usage.context.tokens ?? null,
     window: usage.context.window,
+    estimate: b === undefined ? null : { percent: b.percentage, tokens: b.totalTokens },
     rows,
     max: b?.rawMaxTokens ?? usage.context.window,
     threshold: b?.autoCompactThreshold ?? null,
@@ -546,7 +575,7 @@ async function setPace($: EngineInterface, next: Pace): Promise<void> {
     return
   }
   await update($, pace, () => next)
-  $.ui.status(statusOf(await read($, trail), next))
+  await refreshStatus($)
 }
 
 export const register: Register = (on, options) => {
@@ -581,7 +610,7 @@ export const register: Register = (on, options) => {
     await update($, companions, () => [])
     await refreshLedger($).catch(() => undefined)
     await paint($, mode, true)
-    $.ui.status(statusOf({ phase, percent }, 'espera'))
+    await refreshStatus($)
 
     return next(e)
   })
@@ -595,7 +624,7 @@ export const register: Register = (on, options) => {
       const phase = phaseOf(percent)
       const before = await read($, trail)
       await update($, trail, () => ({ phase, percent }))
-      $.ui.status(statusOf({ phase, percent }, await read($, pace)))
+      await refreshStatus($)
 
       if (before.phase !== phase) {
         const ph = phaseAt(phase)
@@ -801,13 +830,27 @@ export const register: Register = (on, options) => {
     const mates = (await read($, companions)).length
     const isSound = await read($, isSoundOn)
     const isGraphic = e.surface === 'desktop' || e.surface === 'mobile'
-    const road = miniRoad(percent, now, isGraphic ? 12 : 18, marks.map(m => m.percent))
-    const width = Math.max(20, Math.min(160, (e.props.bodyColumns ?? 80) - 2))
+    // En la terminal, `bodyColumns` ya descuenta el `[-]` del motor: la barra ocupa
+    // todo ese ancho. En el escritorio y el móvil se conserva el tope de antes.
+    const columns = e.props.bodyColumns ?? 80
+    const width = isGraphic ? Math.max(20, Math.min(160, columns - 2)) : Math.max(20, columns)
     const { Box, Button, Text } = $.ui.resolve(e)
     const used = book?.rows.filter(r => r.kind === 'used') ?? []
     const buffer = book?.rows.find(r => r.kind === 'buffer')
     const free = book?.rows.find(r => r.kind === 'free')
-    const fill = book?.tokens === null || book === null ? '' : ` · ${tokensOf(book.tokens)}/${tokensOf(book.window)}`
+    // Sin respuesta todavía, el % y los tokens salen de la estimación del desglose, con `~`.
+    const estimate = percent === null ? (book?.estimate ?? null) : null
+    const shownPercent = percentText(percent, book) || '—'
+    // El explorador avanza por el camino también con la estimación; la fase sigue solo a la medida.
+    const road = miniRoad(percent ?? estimate?.percent ?? null, now, isGraphic ? 12 : 18, marks.map(m => m.percent))
+    const fill =
+      book === null
+        ? ''
+        : book.tokens !== null
+          ? ` · ${tokensOf(book.tokens)}/${tokensOf(book.window)}`
+          : estimate === null
+            ? ''
+            : ` · ~${tokensOf(estimate.tokens)}/${tokensOf(book.max)}`
     const extras = [
       book?.model ?? null,
       ...(book?.limits ?? []).map(l => t.band.limit(t.band.limitNames[l.kind] ?? l.kind, l.percentUsed, resetOf(l.resetsAt))),
@@ -832,7 +875,7 @@ export const register: Register = (on, options) => {
               <Text bold>{road.rogue}</Text>
               <Text dimColor>{road.ahead} ▲ </Text>
               <Text dimColor>
-                {percent === null ? '—' : `${percent} %`}
+                {shownPercent}
                 {fill} · {now === 'explora' ? t.walking : t.waiting}
               </Text>
               {w !== 'despejado' && (
@@ -859,7 +902,10 @@ export const register: Register = (on, options) => {
             <Button key="bitacora" label="☰" plain dimColor onPress={() => $.ui.open({ id: PANE, title: t.pane.title })} />
             <Button key="sonido" label={isSound ? '♪' : '✕♪'} plain dimColor onPress={() => setSound($, mode, soundConfig, !isSound)} />
             <Button key="detalle" label={detailed ? '▴' : '▾'} plain dimColor onPress={() => update($, isDetailed, d => !d)} />
-            <Button key="ocultar" label={t.band.hide} role="dismiss" plain dimColor onPress={() => update($, isBandHidden, () => true)} />
+            <Button key="ocultar" label={t.band.hide} role="dismiss" plain dimColor onPress={async () => {
+              await update($, isBandHidden, () => true)
+              await refreshStatus($)
+            }} />
           </Box>
         </Box>
         {detailed && segments.length > 0 && (
@@ -907,6 +953,7 @@ export const register: Register = (on, options) => {
     const phase = phaseOf(percent)
     await update($, trail, () => ({ phase, percent }))
     await update($, isBandHidden, () => false)
+    await refreshStatus($)
     await paint($, mode, true)
     const surfaces = await $.session.surfaces()
     const ph = phaseAt(phase)
