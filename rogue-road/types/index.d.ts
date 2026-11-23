@@ -16,6 +16,13 @@ export type Ledger = {
   /** Tokens usados y ventana, como la línea de estado (`tokens` / `window`). */
   tokens: number | null
   window: number
+  /**
+   * Estimación local del desglose (`percentage` y `totalTokens` de /context),
+   * presente desde el inicio: la banda la muestra con `~` mientras `tokens` es
+   * null (antes de la primera respuesta o justo después de compactar).
+   * Opcional porque un libro guardado por una versión anterior no la trae.
+   */
+  estimate?: { percent: number; tokens: number } | null
   /** Filas del desglose; vacío si no se pudo calcular. */
   rows: LedgerRow[]
   /** La ventana contra la que mide el desglose (puede ser menor que `window`). */
