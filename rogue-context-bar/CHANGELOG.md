@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-23
+
 ### Changed
 - On the desktop app the bar uses rogue-road's width (`bodyColumns - 2`, capped to 20..160, then 72 %), so it no longer overflows in the proportional font. The terminal and VS Code keep the full-width bar.
 
