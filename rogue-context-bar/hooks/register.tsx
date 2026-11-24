@@ -124,6 +124,20 @@ export function extrasText(current: BarUsage, now = new Date()): string {
     .join(' · ')
 }
 
+/**
+ * Cells of the band's bar. The terminal fills `bodyColumns`. The desktop app
+ * draws in a proportional font where █ and ░ are wider than a cell, so it uses
+ * rogue-road's width: `bodyColumns - 2` capped to 20..160, then 72% of that.
+ */
+export function bandBarWidth(surface: string, bodyColumns: number): number {
+  if (surface !== 'desktop') {
+    return Math.max(10, bodyColumns)
+  }
+  const width = Math.max(20, Math.min(160, bodyColumns - 2))
+
+  return Math.max(16, Math.round(width * 0.72))
+}
+
 function glyphOf(row: BarRow, usedIndex: number): string {
   if (row.kind === 'free') return '.'
   if (row.kind === 'buffer') return '~'
@@ -242,7 +256,7 @@ export const register: Register = on => {
     }
 
     const { Box, Text } = $.ui.resolve(e)
-    const widths = cells(current.rows, Math.max(10, e.props.bodyColumns))
+    const widths = cells(current.rows, bandBarWidth(e.surface, e.props.bodyColumns))
     const extras = extrasParts(current)
     const contextAlert = alertOf(current.percent, CONTEXT_ALERT)
 

@@ -2,7 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { SessionUsage } from 'claude-code'
 import type { TestBody } from 'claude-code/testing'
 
-import { CONTEXT_ALERT, LIMIT_ALERT, PLACEMENT, alertOf, cells, extrasText, formatTokens, resetText, statusText } from '../hooks/register'
+import { CONTEXT_ALERT, LIMIT_ALERT, PLACEMENT, alertOf, bandBarWidth, cells, extrasText, formatTokens, resetText, statusText } from '../hooks/register'
 
 const fakeUsage: SessionUsage = {
   startedAt: 0,
@@ -71,6 +71,16 @@ test('cells fill the width in proportion and keep tiny rows visible', () => {
   expect(cells([], 10)).toEqual([])
   expect(formatTokens(1_500)).toBe('1.5k')
   expect(formatTokens(200_000)).toBe('200k')
+})
+
+test('band bar fills the terminal and uses the rogue-road width on desktop', () => {
+  expect(bandBarWidth('terminal', 120)).toBe(120)
+  expect(bandBarWidth('terminal', 4)).toBe(10)
+  expect(bandBarWidth('vscode', 90)).toBe(90)
+  // desktop: (bodyColumns - 2) capped to 20..160, then 72%, at least 16.
+  expect(bandBarWidth('desktop', 120)).toBe(85)
+  expect(bandBarWidth('desktop', 300)).toBe(115)
+  expect(bandBarWidth('desktop', 10)).toBe(16)
 })
 
 test('status line shows the bar with one glyph per used category', () => {

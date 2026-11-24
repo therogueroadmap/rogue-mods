@@ -1,6 +1,6 @@
 {
   "name": "rogue-context-bar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A context bar above the prompt, with no theme: one colour per /context category, then the model, usage limits, auto-compaction threshold and estimated cost, with warning colours as they fill. Toggle with /context-bar.",
   "author": {
     "name": "José R. Pérez Sandó",
